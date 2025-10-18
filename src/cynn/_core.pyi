@@ -7,6 +7,19 @@ def square(x: float) -> float:
     """Square a float value."""
     ...
 
+def seed(seed_value: int = 0) -> None:
+    """
+    Seed the C random number generator used for weight initialization.
+
+    Args:
+        seed_value: Random seed (if 0, uses current time)
+
+    Note:
+        Call this before creating networks for reproducible results.
+        The Tinn library uses C's rand() for weight initialization.
+    """
+    ...
+
 class TinnNetwork:
     """
     A three-layer neural network (input, hidden, output).
@@ -125,4 +138,4 @@ class TinnNetwork:
         """
         ...
 
-__all__ = ['TinnNetwork', 'square']
+__all__ = ['TinnNetwork', 'square', 'seed']

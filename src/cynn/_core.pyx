@@ -2,8 +2,11 @@
 
 import array
 import os
+import time
 
 cimport cpython.array as array
+
+from libc.stdlib cimport srand
 
 from .nnet cimport (
     Tinn,
@@ -18,6 +21,18 @@ from .nnet cimport (
 
 def square(float x):
     return x * x
+
+
+def seed(unsigned int seed_value=0):
+    """
+    Seed the C random number generator used for weight initialization.
+
+    If seed_value is 0 (default), uses current time.
+    Call this before creating networks for reproducible results.
+    """
+    if seed_value == 0:
+        seed_value = <unsigned int>time.time()
+    srand(seed_value)
 
 
 cdef bytes _as_bytes_path(object path):
@@ -41,12 +56,16 @@ cdef class TinnNetwork:
         if inputs > 0 or hidden > 0 or outputs > 0:
             if inputs <= 0 or hidden <= 0 or outputs <= 0:
                 raise ValueError("network dimensions must be positive")
-            self._impl = xtbuild(inputs, hidden, outputs)
+            # Release GIL during network construction
+            with nogil:
+                self._impl = xtbuild(inputs, hidden, outputs)
             self._owns_state = True
 
     def __dealloc__(self):
         if self._owns_state:
-            xtfree(self._impl)
+            # Release GIL during cleanup
+            with nogil:
+                xtfree(self._impl)
             self._owns_state = False
 
     @property
@@ -69,6 +88,7 @@ cdef class TinnNetwork:
         # Convert to memoryview - handles buffer protocol objects
         cdef float[::1] input_mv
         cdef float[::1] target_mv
+        cdef float result
 
         # Try to create memoryview from input
         try:
@@ -91,11 +111,18 @@ cdef class TinnNetwork:
             raise ValueError(
                 f"expected {self._impl.nops} target values, received {target_mv.shape[0]}"
             )
-        return xttrain(self._impl, &input_mv[0], &target_mv[0], rate)
+
+        # Release GIL during expensive C computation
+        with nogil:
+            result = xttrain(self._impl, &input_mv[0], &target_mv[0], rate)
+
+        return result
 
     cpdef list predict(self, object inputs):
         # Convert to memoryview - handles buffer protocol objects
         cdef float[::1] input_mv
+        cdef float* output_ptr
+        cdef int i, nops
 
         # Try to create memoryview from input
         try:
@@ -108,18 +135,31 @@ cdef class TinnNetwork:
             raise ValueError(
                 f"expected {self._impl.nips} input values, received {input_mv.shape[0]}"
             )
-        cdef float* output_ptr = xtpredict(self._impl, &input_mv[0])
-        return [output_ptr[i] for i in range(self._impl.nops)]
+
+        nops = self._impl.nops
+
+        # Release GIL during expensive C computation
+        with nogil:
+            output_ptr = xtpredict(self._impl, &input_mv[0])
+
+        # Build output list (requires GIL)
+        return [output_ptr[i] for i in range(nops)]
 
     cpdef void save(self, object path):
         cdef bytes encoded = _as_bytes_path(path)
-        xtsave(self._impl, encoded)
+        cdef const char* c_path = encoded
+        # Release GIL during file I/O
+        with nogil:
+            xtsave(self._impl, c_path)
 
     @classmethod
     def load(cls, object path):
         cdef TinnNetwork instance = cls.__new__(cls)
         instance._owns_state = False
         cdef bytes encoded = _as_bytes_path(path)
-        instance._impl = xtload(encoded)
+        cdef const char* c_path = encoded
+        # Release GIL during file I/O
+        with nogil:
+            instance._impl = xtload(c_path)
         instance._owns_state = True
         return instance

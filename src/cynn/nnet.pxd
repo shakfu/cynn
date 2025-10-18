@@ -23,10 +23,10 @@ cdef extern from "Tinn.h":
         # Number of outputs.
         int nops
 
-    cdef float* xtpredict(Tinn, const float* in_)
-    cdef float xttrain(Tinn, const float* in_, const float* tg, float rate)
-    cdef Tinn xtbuild(int nips, int nhid, int nops)
-    cdef void xtsave(Tinn, const char* path)
-    cdef Tinn xtload(const char* path)
-    cdef void xtfree(Tinn)
-    cdef void xtprint(const float* arr, const int size)
+    cdef float* xtpredict(Tinn, const float* in_) nogil
+    cdef float xttrain(Tinn, const float* in_, const float* tg, float rate) nogil
+    cdef Tinn xtbuild(int nips, int nhid, int nops) nogil
+    cdef void xtsave(Tinn, const char* path) nogil
+    cdef Tinn xtload(const char* path) nogil
+    cdef void xtfree(Tinn) nogil
+    cdef void xtprint(const float* arr, const int size) nogil
