@@ -11,8 +11,9 @@ cynn provides Python bindings to the [Tinn](https://github.com/glouw/tinn) libra
 - Simple 3-layer neural network architecture (input, hidden, output)
 - Backpropagation training with configurable learning rate
 - Save/load trained models to disk
-- Minimal dependencies (no NumPy, TensorFlow, etc.)
+- Buffer protocol support - works with lists, tuples, array.array, NumPy arrays, etc.
 - Fast C implementation with Python convenience
+- Zero required dependencies (NumPy is optional)
 
 ## Installation
 
@@ -98,6 +99,37 @@ for epoch in range(100):
 for inputs, expected in xor_data:
     pred = net.predict(inputs)
     print(f"{inputs} -> {pred[0]:.4f} (expected {expected[0]})")
+```
+
+### NumPy Support
+
+The library supports any object implementing the buffer protocol, including NumPy arrays:
+
+```python
+import numpy as np
+from cynn import TinnNetwork
+
+# Create network
+net = TinnNetwork(2, 4, 1)
+
+# Use NumPy arrays (float32 recommended, but float64 works too)
+inputs = np.array([0.5, 0.3], dtype=np.float32)
+targets = np.array([0.8], dtype=np.float32)
+
+# Train with numpy arrays
+loss = net.train(inputs, targets, 0.1)
+
+# Predict with numpy arrays
+prediction = net.predict(inputs)
+
+# Batch processing
+batch = np.array([
+    [0.1, 0.2],
+    [0.3, 0.4],
+    [0.5, 0.6],
+], dtype=np.float32)
+
+predictions = [net.predict(row) for row in batch]
 ```
 
 ### Save and Load Models

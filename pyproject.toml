@@ -12,6 +12,7 @@ dependencies = []
 [dependency-groups]
 dev = [
     "pytest>=8.4.2",
+    "numpy>=1.26.0",
 ]
 [project.scripts]
 demo = "cynn:main"

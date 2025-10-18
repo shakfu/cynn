@@ -51,16 +51,21 @@ class TinnNetwork:
 
     def train(
         self,
-        inputs: Sequence[float],
-        targets: Sequence[float],
+        inputs: Sequence[float] | memoryview,
+        targets: Sequence[float] | memoryview,
         rate: float
     ) -> float:
         """
         Train the network on one example using backpropagation.
 
+        Supports any object implementing the buffer protocol (lists, tuples,
+        array.array, numpy arrays, etc.) containing float32 values.
+
         Args:
-            inputs: Input values (length must match input_size)
-            targets: Target output values (length must match output_size)
+            inputs: Input values (length must match input_size).
+                    Can be any buffer-compatible object with float32 dtype.
+            targets: Target output values (length must match output_size).
+                     Can be any buffer-compatible object with float32 dtype.
             rate: Learning rate (typically 0.0 to 1.0)
 
         Returns:
@@ -68,21 +73,27 @@ class TinnNetwork:
 
         Raises:
             ValueError: If inputs or targets have wrong length
+            TypeError: If buffer types are incompatible
         """
         ...
 
-    def predict(self, inputs: Sequence[float]) -> list[float]:
+    def predict(self, inputs: Sequence[float] | memoryview) -> list[float]:
         """
         Make a prediction given input values.
 
+        Supports any object implementing the buffer protocol (lists, tuples,
+        array.array, numpy arrays, etc.) containing float32 values.
+
         Args:
-            inputs: Input values (length must match input_size)
+            inputs: Input values (length must match input_size).
+                    Can be any buffer-compatible object with float32 dtype.
 
         Returns:
             List of output values (length matches output_size)
 
         Raises:
             ValueError: If inputs has wrong length
+            TypeError: If buffer type is incompatible
         """
         ...
 

@@ -66,27 +66,48 @@ cdef class TinnNetwork:
         return (self._impl.nips, self._impl.nhid, self._impl.nops)
 
     cpdef float train(self, object inputs, object targets, float rate):
-        cdef array.array input_buf = array.array("f", inputs)
-        cdef array.array target_buf = array.array("f", targets)
-        if len(input_buf) != self._impl.nips:
+        # Convert to memoryview - handles buffer protocol objects
+        cdef float[::1] input_mv
+        cdef float[::1] target_mv
+
+        # Try to create memoryview from input
+        try:
+            input_mv = inputs
+        except (TypeError, ValueError):
+            # Not a buffer, convert via array.array
+            input_mv = array.array('f', inputs)
+
+        try:
+            target_mv = targets
+        except (TypeError, ValueError):
+            # Not a buffer, convert via array.array
+            target_mv = array.array('f', targets)
+
+        if input_mv.shape[0] != self._impl.nips:
             raise ValueError(
-                f"expected {self._impl.nips} input values, received {len(input_buf)}"
+                f"expected {self._impl.nips} input values, received {input_mv.shape[0]}"
             )
-        if len(target_buf) != self._impl.nops:
+        if target_mv.shape[0] != self._impl.nops:
             raise ValueError(
-                f"expected {self._impl.nops} target values, received {len(target_buf)}"
+                f"expected {self._impl.nops} target values, received {target_mv.shape[0]}"
             )
-        cdef float[::1] input_mv = input_buf
-        cdef float[::1] target_mv = target_buf
         return xttrain(self._impl, &input_mv[0], &target_mv[0], rate)
 
     cpdef list predict(self, object inputs):
-        cdef array.array input_buf = array.array("f", inputs)
-        if len(input_buf) != self._impl.nips:
+        # Convert to memoryview - handles buffer protocol objects
+        cdef float[::1] input_mv
+
+        # Try to create memoryview from input
+        try:
+            input_mv = inputs
+        except (TypeError, ValueError):
+            # Not a buffer, convert via array.array
+            input_mv = array.array('f', inputs)
+
+        if input_mv.shape[0] != self._impl.nips:
             raise ValueError(
-                f"expected {self._impl.nips} input values, received {len(input_buf)}"
+                f"expected {self._impl.nips} input values, received {input_mv.shape[0]}"
             )
-        cdef float[::1] input_mv = input_buf
         cdef float* output_ptr = xtpredict(self._impl, &input_mv[0])
         return [output_ptr[i] for i in range(self._impl.nops)]
 
