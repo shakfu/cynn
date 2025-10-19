@@ -7,7 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.1]
+
 ### Added
+- CNNNetwork class wrapping the nn1 Convolutional Neural Network C library
+  - Layer-based architecture with support for input, convolutional, and fully-connected layers
+  - Flexible network building API with `create_input_layer()`, `add_conv_layer()`, `add_full_layer()`
+  - Support for arbitrary CNN architectures (e.g., MNIST-like, multi-conv networks)
+  - Float64 precision for all computations
+  - Convolutional layer parameters: kernel_size, padding, stride, std for weight initialization
+  - Full layer parameters: num_nodes, std for weight initialization
+  - CNNLayer class exposing layer properties (shape, type, weights, biases, conv parameters)
+  - Network properties: `input_shape`, `output_size`, `num_layers`, `layers`
+  - ReLU activation for convolutional layers, Tanh for hidden fully-connected layers, Softmax for output layer
+  - GIL-free execution for parallel training and inference
+  - Debug functionality with `dump()` method for network introspection
+  - 31 comprehensive tests covering creation, validation, training, prediction, and complex architectures
 - GenannNetwork class wrapping the GENANN C library
   - Multi-layer neural network support with arbitrary depth
   - Float64 precision for higher accuracy
@@ -34,8 +49,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Compatible with NumPy's default float64 arrays without type conversion
   - Same flexible architecture and sparse network support as FannNetwork
   - All features from FannNetwork available in double precision
-- Comprehensive type stubs for GenannNetwork, FannNetwork, and FannNetworkDouble in _core.pyi
-- GENANN and FANN library integration in CMake build system
+- Comprehensive type stubs for CNNNetwork, CNNLayer, GenannNetwork, FannNetwork, and FannNetworkDouble in _core.pyi
+- nn1, GENANN and FANN library integration in CMake build system
+- Created `cnn.pxd` for nn1 CNN C library declarations
 - API comparison documentation in README.md
 
 ### Changed
@@ -52,7 +68,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added "Choosing Between Network Implementations" section to README
 - Expanded feature comparison table with precision information
 
-## [0.1.0] - 2024
+## [0.1.0]
 
 ### Added
 - Initial release
@@ -67,6 +83,3 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - CMake-based build system with scikit-build-core
 - Thread-safety tests demonstrating parallel execution
 - NumPy compatibility tests
-
-[Unreleased]: https://github.com/shakfu/cynn/compare/v0.1.0...HEAD
-[0.1.0]: https://github.com/shakfu/cynn/releases/tag/v0.1.0

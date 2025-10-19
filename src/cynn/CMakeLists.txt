@@ -3,7 +3,7 @@ add_custom_command(
     OUTPUT _core.c
     COMMAND Python::Interpreter -m cython
           "${CMAKE_CURRENT_SOURCE_DIR}/_core.pyx" --output-file _core.c
-    DEPENDS _core.pyx
+    DEPENDS _core.pyx cnn.pxd
 )
 
 python_add_library(_core MODULE _core.c WITH_SOABI)
@@ -14,6 +14,7 @@ target_link_libraries(_core
     genann
     floatfann
     doublefann
+    nn1
 )
 
 target_include_directories(_core
@@ -23,6 +24,7 @@ target_include_directories(_core
     ${CMAKE_SOURCE_DIR}/thirdparty/fann
     ${CMAKE_SOURCE_DIR}/thirdparty/fann/src/include
     ${CMAKE_BINARY_DIR}/thirdparty/fann/src/include
+    ${CMAKE_SOURCE_DIR}/thirdparty/nn1
 )
 
 

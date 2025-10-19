@@ -475,7 +475,287 @@ class FannNetwork:
         """
         ...
 
-__all__ = ['TinnNetwork', 'GenannNetwork', 'FannNetwork', 'FannNetworkDouble', 'square', 'seed']
+class CNNLayer:
+    """
+    Represents a single layer in a convolutional neural network.
+
+    This class wraps the C Layer structure and should not be instantiated directly.
+    Use CNNNetwork methods to build layers.
+    """
+
+    @property
+    def layer_id(self) -> int:
+        """Layer ID in the network."""
+        ...
+
+    @property
+    def shape(self) -> tuple[int, int, int]:
+        """Layer shape as (depth, width, height)."""
+        ...
+
+    @property
+    def depth(self) -> int:
+        """Layer depth dimension."""
+        ...
+
+    @property
+    def width(self) -> int:
+        """Layer width dimension."""
+        ...
+
+    @property
+    def height(self) -> int:
+        """Layer height dimension."""
+        ...
+
+    @property
+    def num_nodes(self) -> int:
+        """Total number of nodes (depth * width * height)."""
+        ...
+
+    @property
+    def num_weights(self) -> int:
+        """Number of weights in this layer."""
+        ...
+
+    @property
+    def num_biases(self) -> int:
+        """Number of biases in this layer."""
+        ...
+
+    @property
+    def layer_type(self) -> str:
+        """Layer type as string: 'input', 'full', or 'conv'."""
+        ...
+
+    @property
+    def kernel_size(self) -> int:
+        """
+        Kernel size for convolutional layers.
+
+        Raises:
+            ValueError: If this is not a convolutional layer
+        """
+        ...
+
+    @property
+    def padding(self) -> int:
+        """
+        Padding for convolutional layers.
+
+        Raises:
+            ValueError: If this is not a convolutional layer
+        """
+        ...
+
+    @property
+    def stride(self) -> int:
+        """
+        Stride for convolutional layers.
+
+        Raises:
+            ValueError: If this is not a convolutional layer
+        """
+        ...
+
+    def get_outputs(self) -> list[float]:
+        """
+        Get the output values of this layer.
+
+        Returns:
+            List of output values
+
+        Raises:
+            RuntimeError: If layer not initialized
+        """
+        ...
+
+
+class CNNNetwork:
+    """
+    A convolutional neural network with support for input, convolutional, and fully-connected layers.
+
+    This class wraps the nn1 CNN C library. Networks are built by chaining layers together
+    starting from an input layer.
+
+    Example:
+        net = CNNNetwork()
+        net.create_input_layer(1, 28, 28)  # MNIST-like input
+        net.add_conv_layer(8, 24, 24, kernel_size=5, stride=1)
+        net.add_conv_layer(16, 12, 12, kernel_size=5, stride=2)
+        net.add_full_layer(10)  # 10 output classes
+
+        # Train
+        error = net.train(input_data, target_data, learning_rate=0.01)
+
+        # Predict
+        outputs = net.predict(input_data)
+    """
+
+    def create_input_layer(self, depth: int, width: int, height: int) -> CNNLayer:
+        """
+        Create an input layer. This must be called first to start building a network.
+
+        Args:
+            depth: Input depth (number of channels, e.g., 1 for grayscale, 3 for RGB)
+            width: Input width in pixels
+            height: Input height in pixels
+
+        Returns:
+            CNNLayer wrapper for the created input layer
+
+        Raises:
+            ValueError: If network already has an input layer or dimensions invalid
+            MemoryError: If layer creation fails
+        """
+        ...
+
+    def add_conv_layer(
+        self,
+        depth: int,
+        width: int,
+        height: int,
+        kernel_size: int,
+        padding: int = 0,
+        stride: int = 1,
+        std: float = 0.1
+    ) -> CNNLayer:
+        """
+        Add a convolutional layer to the network.
+
+        Args:
+            depth: Number of output channels (filters/feature maps)
+            width: Output width after convolution
+            height: Output height after convolution
+            kernel_size: Size of the convolution kernel (must be odd, e.g., 3, 5, 7)
+            padding: Zero-padding added to input (default: 0)
+            stride: Stride for the convolution operation (default: 1)
+            std: Standard deviation for random weight initialization (default: 0.1)
+
+        Returns:
+            CNNLayer wrapper for the created convolutional layer
+
+        Raises:
+            ValueError: If network has no input layer or parameters are invalid
+            MemoryError: If layer creation fails
+
+        Note:
+            The relationship between input/output dimensions must satisfy:
+            (width-1) * stride + kernel_size <= prev_width + padding*2
+            (height-1) * stride + kernel_size <= prev_height + padding*2
+        """
+        ...
+
+    def add_full_layer(self, num_nodes: int, std: float = 0.1) -> CNNLayer:
+        """
+        Add a fully-connected layer to the network.
+
+        Args:
+            num_nodes: Number of nodes in this layer
+            std: Standard deviation for random weight initialization (default: 0.1)
+
+        Returns:
+            CNNLayer wrapper for the created fully-connected layer
+
+        Raises:
+            ValueError: If network has no input layer or num_nodes invalid
+            MemoryError: If layer creation fails
+        """
+        ...
+
+    @property
+    def input_shape(self) -> tuple[int, int, int]:
+        """
+        Shape of the input layer as (depth, width, height).
+
+        Raises:
+            RuntimeError: If network has no input layer
+        """
+        ...
+
+    @property
+    def output_size(self) -> int:
+        """
+        Number of output nodes in the final layer.
+
+        Raises:
+            RuntimeError: If network has no layers
+        """
+        ...
+
+    @property
+    def num_layers(self) -> int:
+        """Total number of layers in the network."""
+        ...
+
+    @property
+    def layers(self) -> list[CNNLayer]:
+        """List of all layer wrappers in the network."""
+        ...
+
+    def predict(self, inputs: Sequence[float] | memoryview) -> list[float]:
+        """
+        Make a prediction given input values.
+
+        The network performs a forward pass through all layers and returns
+        the outputs from the final layer.
+
+        Args:
+            inputs: Input values as a flat array (length must match input layer size).
+                   Size should be depth * width * height of the input layer.
+                   Can be any buffer-compatible object with float64 dtype.
+
+        Returns:
+            List of output values from the final layer
+
+        Raises:
+            RuntimeError: If network has no layers
+            ValueError: If input size doesn't match the network's input layer
+        """
+        ...
+
+    def train(
+        self,
+        inputs: Sequence[float] | memoryview,
+        targets: Sequence[float] | memoryview,
+        learning_rate: float
+    ) -> float:
+        """
+        Train the network on one example using backpropagation.
+
+        Performs forward pass, computes error, backpropagates gradients,
+        and updates all weights and biases in the network.
+
+        Args:
+            inputs: Input values as a flat array (length must match input layer size).
+                   Can be any buffer-compatible object with float64 dtype.
+            targets: Target output values (length must match output layer size).
+                    Can be any buffer-compatible object with float64 dtype.
+            learning_rate: Learning rate for gradient descent (typically 0.001 to 0.1)
+
+        Returns:
+            Mean squared error for this training example
+
+        Raises:
+            RuntimeError: If network has no layers
+            ValueError: If input or target size doesn't match the network dimensions
+        """
+        ...
+
+    def dump(self) -> None:
+        """
+        Print debug information about all layers to stdout.
+
+        This displays the layer structure, weights, biases, and current outputs.
+        Useful for debugging and understanding network behavior.
+
+        Raises:
+            RuntimeError: If network has no layers
+        """
+        ...
+
+
+__all__ = ['TinnNetwork', 'GenannNetwork', 'FannNetwork', 'FannNetworkDouble', 'CNNNetwork', 'CNNLayer', 'square', 'seed']
 
 
 class FannNetworkDouble:

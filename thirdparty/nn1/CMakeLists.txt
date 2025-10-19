@@ -1,0 +1,24 @@
+project(nn1_project C)
+
+set(CMAKE_C_STANDARD 99)
+set(CMAKE_C_STANDARD_REQUIRED TRUE)
+
+add_library(nn1
+	STATIC
+	cnn.c
+)
+
+target_compile_options(nn1
+	PUBLIC
+	-Wall
+	-Wextra
+	-pedantic
+	-O3
+	-ffast-math
+	-flto
+	-march=native
+	-fPIC
+)
+
+# Add math library for exp, tanh, etc.
+target_link_libraries(nn1 PUBLIC m)

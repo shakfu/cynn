@@ -155,10 +155,10 @@ Nice to have features for future consideration.
 ## Research & Exploration
 
 ### Potential New Features
-- [ ] Investigate adding convolutional layer support (if any C library supports it)
 - [ ] Research recurrent network support (RNN, LSTM)
 - [ ] Evaluate adding ensemble methods
 - [ ] Consider model compression techniques
+- [ ] Add save/load functionality to CNNNetwork
 
 ### Upstream Contributions
 - [ ] Document any patches to vendored libraries
@@ -193,9 +193,17 @@ Track completed items here by moving them from above sections.
 - [x] GenannNetwork implementation
 - [x] FannNetwork implementation
 - [x] FannNetworkDouble implementation
+- [x] CNNNetwork implementation with convolutional layer support (nn1 library)
+  - [x] Layer-based API for building CNNs
+  - [x] Support for input, convolutional, and fully-connected layers
+  - [x] Configurable kernel size, stride, and padding
+  - [x] CNNLayer class for layer introspection
+  - [x] GIL-free execution
+  - [x] Comprehensive test suite (31 tests)
+  - [x] Full type stubs and documentation
 - [x] Comprehensive test suite
 - [x] Buffer protocol support
 - [x] GIL-free execution
-- [x] Save/load functionality for all network types
+- [x] Save/load functionality for Tinn, Genann, and FANN network types
 - [x] Basic documentation in README.md
 - [x] Refactored Cython declarations into separate .pxd files

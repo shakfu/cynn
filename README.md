@@ -4,20 +4,22 @@ A Cython wrapper for minimal, dependency-free neural network libraries in C.
 
 ## Overview
 
-cynn provides Python bindings to three lightweight neural network libraries:
+cynn provides Python bindings to four lightweight neural network libraries:
 - [Tinn](https://github.com/glouw/tinn) - A tiny 3-layer neural network library
 - [GENANN](https://github.com/codeplea/genann) - A minimal multi-layer neural network library
 - [FANN](https://github.com/libfann/fann) - Fast Artificial Neural Network library
+- [nn1](https://github.com/euske/nn1) - Convolutional Neural Network in C
 
 The project uses Cython to create efficient Python wrappers around the C implementations, allowing you to train and use neural networks with minimal overhead.
 
 ## Features
 
-- **Four network implementations:**
+- **Five network implementations:**
   - `TinnNetwork`: Simple 3-layer architecture (input, hidden, output) using float32
   - `GenannNetwork`: Flexible multi-layer architecture with arbitrary depth using float64
   - `FannNetwork`: Flexible multi-layer architecture with settable learning parameters using float32
   - `FannNetworkDouble`: Same as FannNetwork but with float64 precision
+  - `CNNNetwork`: Layer-based convolutional neural network with input, conv, and fully-connected layers using float64
 - Backpropagation training with configurable learning rate
 - Save/load trained models to disk
 - Buffer protocol support - works with lists, tuples, array.array, NumPy arrays, etc.
@@ -97,6 +99,41 @@ net_copy = net.copy()
 
 # Randomize weights
 net.randomize()
+```
+
+### Basic Example - CNNNetwork
+
+```python
+from cynn import CNNNetwork
+
+# Create a convolutional neural network
+net = CNNNetwork()
+net.create_input_layer(1, 28, 28)  # 28x28 grayscale image input
+net.add_conv_layer(8, 24, 24, kernel_size=5, stride=1)  # 8 filters, 5x5 kernel
+net.add_conv_layer(16, 12, 12, kernel_size=5, stride=2)  # 16 filters, stride 2
+net.add_full_layer(10)  # 10 output classes
+
+# Prepare input (flattened 28x28 image)
+inputs = [0.5] * (28 * 28)  # 784 values
+targets = [1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]  # one-hot encoded
+
+# Train the network
+error = net.train(inputs, targets, learning_rate=0.01)
+print(f"Training error: {error}")
+
+# Make predictions
+outputs = net.predict(inputs)
+predicted_class = outputs.index(max(outputs))
+print(f"Predicted class: {predicted_class}")
+
+# CNNNetwork has additional features
+print(f"Network layers: {net.num_layers}")
+print(f"Input shape: {net.input_shape}")
+print(f"Output size: {net.output_size}")
+
+# Access individual layers
+for layer in net.layers:
+    print(f"Layer {layer.layer_id}: type={layer.layer_type}, shape={layer.shape}")
 ```
 
 ### Basic Example - FannNetwork
@@ -284,15 +321,17 @@ cynn/
 │       ├── __init__.py       # Public API
 │       ├── _core.pyx         # Cython implementation
 │       ├── _core.pyi         # Type stubs
+│       ├── cnn.pxd           # CNN declarations
 │       ├── dfann.pxd         # Double Fann declarations
 │       ├── ffann.pxd         # Float Fann declarations
-│       ├── gennan.pxd        # Gennan declarations
+│       ├── genann.pxd        # Genann declarations
 │       ├── tinn.pxd          # Tinn declarations
 │       └── CMakeLists.txt    # Build configuration
 ├── thirdparty/
 │   ├── tinn/                 # Vendored Tinn C library
-│   ├── genann/               # Vendored Gennan C library
-│   └── fann/                 # Vendored Fann C library
+│   ├── genann/               # Vendored Genann C library
+│   ├── fann/                 # Vendored Fann C library
+│   └── nn1/                  # Vendored nn1 CNN C library
 ├── tests/                    # pytest test suite
 ├── CMakeLists.txt            # Root CMake config
 ├── Makefile                  # Build shortcuts
@@ -517,19 +556,112 @@ net.train(inputs, targets)
 prediction = net.predict(inputs)
 ```
 
+### CNNNetwork
+
+```python
+class CNNNetwork:
+    def __init__(self)
+```
+
+Create a new convolutional neural network (float64 precision). Networks are built by adding layers sequentially.
+
+**Properties:**
+- `input_shape`: Tuple of (depth, width, height) for the input layer
+- `output_size`: Number of output nodes in the final layer
+- `num_layers`: Total number of layers in the network
+- `layers`: List of CNNLayer wrappers
+
+**Methods:**
+
+#### create_input_layer()
+```python
+def create_input_layer(self, depth: int, width: int, height: int) -> CNNLayer
+```
+Create an input layer. Must be called first when building a network.
+
+#### add_conv_layer()
+```python
+def add_conv_layer(
+    self,
+    depth: int,
+    width: int,
+    height: int,
+    kernel_size: int,
+    padding: int = 0,
+    stride: int = 1,
+    std: float = 0.1
+) -> CNNLayer
+```
+Add a convolutional layer with specified output dimensions and convolution parameters.
+
+#### add_full_layer()
+```python
+def add_full_layer(self, num_nodes: int, std: float = 0.1) -> CNNLayer
+```
+Add a fully-connected layer.
+
+#### predict()
+```python
+def predict(self, inputs: list[float]) -> list[float]
+```
+Make a prediction. Input should be a flat array of size depth × width × height.
+
+#### train()
+```python
+def train(
+    self,
+    inputs: list[float],
+    targets: list[float],
+    learning_rate: float
+) -> float
+```
+Train the network on one example. Returns mean squared error.
+
+#### dump()
+```python
+def dump(self) -> None
+```
+Print debug information about all layers to stdout.
+
+### CNNLayer
+
+```python
+class CNNLayer
+```
+
+Represents a single layer in a CNN. Created by CNNNetwork methods, not directly instantiated.
+
+**Properties:**
+- `layer_id`: Layer ID in the network
+- `shape`: Tuple of (depth, width, height)
+- `depth`, `width`, `height`: Individual dimensions
+- `num_nodes`: Total nodes (depth × width × height)
+- `num_weights`, `num_biases`: Weight and bias counts
+- `layer_type`: String ('input', 'conv', or 'full')
+- `kernel_size`, `padding`, `stride`: Conv layer parameters (raises ValueError for non-conv layers)
+
+**Methods:**
+
+#### get_outputs()
+```python
+def get_outputs(self) -> list[float]
+```
+Get the output values of this layer.
+
 ## Choosing Between Network Implementations
 
-| Feature | TinnNetwork | GenannNetwork | FannNetwork | FannNetworkDouble |
-|---------|-------------|---------------|-------------|-------------------|
-| **Precision** | float32 | float64 | float32 | float64 |
-| **Architecture** | Fixed 3-layer | Multi-layer | Flexible | Flexible |
-| **Layer Spec** | (in, hid, out) | (in, nlayers, hid, out) | [in, h1, h2, out] | [in, h1, h2, out] |
-| **Learning Rate** | Per-train | Per-train | Settable property | Settable property |
-| **Momentum** | No | No | Yes | Yes |
-| **Sparse Networks** | No | No | Yes | Yes |
-| **Returns Loss** | Yes | No | No | No |
-| **Memory** | Low | Medium | Low | Medium |
-| **NumPy Default** | Converts | Native | Converts | Native |
+| Feature | TinnNetwork | GenannNetwork | FannNetwork | FannNetworkDouble | CNNNetwork |
+|---------|-------------|---------------|-------------|-------------------|------------|
+| **Precision** | float32 | float64 | float32 | float64 | float64 |
+| **Architecture** | Fixed 3-layer | Multi-layer | Flexible | Flexible | Layer-based CNN |
+| **Layer Spec** | (in, hid, out) | (in, nlayers, hid, out) | [in, h1, h2, out] | [in, h1, h2, out] | Build API |
+| **Learning Rate** | Per-train | Per-train | Settable property | Settable property | Per-train |
+| **Momentum** | No | No | Yes | Yes | No |
+| **Sparse Networks** | No | No | Yes | Yes | No |
+| **Convolutional** | No | No | No | No | Yes |
+| **Returns Loss** | Yes | No | No | No | Yes |
+| **Memory** | Low | Medium | Low | Medium | High |
+| **NumPy Default** | Converts | Native | Converts | Native | Native |
 
 **Use TinnNetwork when:**
 - You need a simple 3-layer network
@@ -560,6 +692,16 @@ prediction = net.predict(inputs)
 - You need to minimize accumulation of floating-point errors
 - You're comparing results with other float64-based implementations
 - The extra memory cost (2x per weight) is acceptable
+
+**Use CNNNetwork when:**
+- You need convolutional layers for image processing or spatial data
+- Building custom CNN architectures (e.g., MNIST, CIFAR-10 style networks)
+- You want fine-grained control over layer configuration (kernel size, stride, padding)
+- Working with 2D/3D structured input data
+- Need to inspect individual layer properties and outputs
+- Implementing image classification, object detection, or computer vision tasks
+- Higher precision is required (float64)
+- You prefer a layer-by-layer building API over fixed architecture
 
 ## Performance Considerations
 
@@ -606,6 +748,7 @@ with ThreadPoolExecutor(max_workers=4) as executor:
 - [Tinn](https://github.com/glouw/tinn) - Original C neural network library by glouw
 - [GENANN](https://github.com/codeplea/genann) - Minimal C neural network library by codeplea
 - [FANN](https://github.com/libfann/fann) - Fast Artificial Neural Network library by Steffen Nissen
+- [nn1](https://github.com/euske/nn1) - Convolutional Neural Network in C by euske
 - Built with [Cython](https://cython.org/)
 - Build system uses [scikit-build-core](https://scikit-build-core.readthedocs.io/)
 
