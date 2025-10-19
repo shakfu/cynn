@@ -8,9 +8,12 @@ build:
 test:
 	@uv run pytest -v
 
+wheel:
+	@uv build
+
 cmake:
 	@mkdir -p build && cd build && cmake .. && cmake --build . --config Release
 
 clean:
-	@rm -rf build src/*.egg-info
+	@rm -rf build dist src/*.egg-info
 	@rm -f *.so
