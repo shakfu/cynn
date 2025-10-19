@@ -284,12 +284,15 @@ cynn/
 │       ├── __init__.py       # Public API
 │       ├── _core.pyx         # Cython implementation
 │       ├── _core.pyi         # Type stubs
-│       ├── nnet.pxd          # C type declarations
+│       ├── dfann.pxd         # Double Fann declarations
+│       ├── ffann.pxd         # Float Fann declarations
+│       ├── gennan.pxd        # Gennan declarations
+│       ├── tinn.pxd          # Tinn declarations
 │       └── CMakeLists.txt    # Build configuration
 ├── thirdparty/
 │   ├── tinn/                 # Vendored Tinn C library
-│   ├── genann/               # Vendored GENANN C library
-│   └── fann/                 # Vendored FANN C library
+│   ├── genann/               # Vendored Gennan C library
+│   └── fann/                 # Vendored Fann C library
 ├── tests/                    # pytest test suite
 ├── CMakeLists.txt            # Root CMake config
 ├── Makefile                  # Build shortcuts

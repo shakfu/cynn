@@ -9,7 +9,9 @@ cimport cpython.array as array
 from libc.stdlib cimport srand, malloc, free
 from libc.stdio cimport FILE, fopen, fclose
 
-from . cimport nnet
+from . cimport tinn
+from . cimport genann as genn
+from . cimport ffann
 from . cimport dfann
 
 
@@ -41,7 +43,7 @@ cdef bytes _as_bytes_path(object path):
 
 
 cdef class TinnNetwork:
-    cdef nnet.Tinn _impl
+    cdef tinn.Tinn _impl
     cdef bint _owns_state
 
     def __cinit__(self, int inputs=0, int hidden=0, int outputs=0):
@@ -52,14 +54,14 @@ cdef class TinnNetwork:
                 raise ValueError("network dimensions must be positive")
             # Release GIL during network construction
             with nogil:
-                self._impl = nnet.xtbuild(inputs, hidden, outputs)
+                self._impl = tinn.xtbuild(inputs, hidden, outputs)
             self._owns_state = True
 
     def __dealloc__(self):
         if self._owns_state:
             # Release GIL during cleanup
             with nogil:
-                nnet.xtfree(self._impl)
+                tinn.xtfree(self._impl)
             self._owns_state = False
 
     @property
@@ -108,7 +110,7 @@ cdef class TinnNetwork:
 
         # Release GIL during expensive C computation
         with nogil:
-            result = nnet.xttrain(self._impl, &input_mv[0], &target_mv[0], rate)
+            result = tinn.xttrain(self._impl, &input_mv[0], &target_mv[0], rate)
 
         return result
 
@@ -134,7 +136,7 @@ cdef class TinnNetwork:
 
         # Release GIL during expensive C computation
         with nogil:
-            output_ptr = nnet.xtpredict(self._impl, &input_mv[0])
+            output_ptr = tinn.xtpredict(self._impl, &input_mv[0])
 
         # Build output list (requires GIL)
         return [output_ptr[i] for i in range(nops)]
@@ -144,7 +146,7 @@ cdef class TinnNetwork:
         cdef const char* c_path = encoded
         # Release GIL during file I/O
         with nogil:
-            nnet.xtsave(self._impl, c_path)
+            tinn.xtsave(self._impl, c_path)
 
     @classmethod
     def load(cls, object path):
@@ -154,13 +156,13 @@ cdef class TinnNetwork:
         cdef const char* c_path = encoded
         # Release GIL during file I/O
         with nogil:
-            instance._impl = nnet.xtload(c_path)
+            instance._impl = tinn.xtload(c_path)
         instance._owns_state = True
         return instance
 
 
 cdef class GenannNetwork:
-    cdef nnet.genann* _impl
+    cdef genn.genann* _impl
     cdef bint _owns_state
 
     def __cinit__(self, int inputs=0, int hidden_layers=0, int hidden=0, int outputs=0):
@@ -172,7 +174,7 @@ cdef class GenannNetwork:
                 raise ValueError("network dimensions must be positive")
             # Release GIL during network construction
             with nogil:
-                self._impl = nnet.genann_init(inputs, hidden_layers, hidden, outputs)
+                self._impl = genn.genann_init(inputs, hidden_layers, hidden, outputs)
             if self._impl == NULL:
                 raise MemoryError("failed to allocate genann network")
             self._owns_state = True
@@ -181,7 +183,7 @@ cdef class GenannNetwork:
         if self._owns_state and self._impl != NULL:
             # Release GIL during cleanup
             with nogil:
-                nnet.genann_free(self._impl)
+                genn.genann_free(self._impl)
             self._impl = NULL
             self._owns_state = False
 
@@ -259,7 +261,7 @@ cdef class GenannNetwork:
 
         # Release GIL during expensive C computation
         with nogil:
-            nnet.genann_train(self._impl, &input_mv[0], &target_mv[0], rate)
+            genn.genann_train(self._impl, &input_mv[0], &target_mv[0], rate)
 
     cpdef list predict(self, object inputs):
         if self._impl == NULL:
@@ -286,7 +288,7 @@ cdef class GenannNetwork:
 
         # Release GIL during expensive C computation
         with nogil:
-            output_ptr = nnet.genann_run(self._impl, &input_mv[0])
+            output_ptr = genn.genann_run(self._impl, &input_mv[0])
 
         # Build output list (requires GIL)
         return [output_ptr[i] for i in range(nops)]
@@ -296,7 +298,7 @@ cdef class GenannNetwork:
             raise RuntimeError("network not initialized")
         # Release GIL during randomization
         with nogil:
-            nnet.genann_randomize(self._impl)
+            genn.genann_randomize(self._impl)
 
     def copy(self):
         if self._impl == NULL:
@@ -305,7 +307,7 @@ cdef class GenannNetwork:
         new_network._owns_state = False
         # Release GIL during copy
         with nogil:
-            new_network._impl = nnet.genann_copy(self._impl)
+            new_network._impl = genn.genann_copy(self._impl)
         if new_network._impl == NULL:
             raise MemoryError("failed to copy genann network")
         new_network._owns_state = True
@@ -324,7 +326,7 @@ cdef class GenannNetwork:
             raise IOError(f"failed to open file for writing: {path}")
         try:
             with nogil:
-                nnet.genann_write(self._impl, file_ptr)
+                genn.genann_write(self._impl, file_ptr)
         finally:
             with nogil:
                 fclose(file_ptr)
@@ -344,7 +346,7 @@ cdef class GenannNetwork:
             raise IOError(f"failed to open file for reading: {path}")
         try:
             with nogil:
-                instance._impl = nnet.genann_read(file_ptr)
+                instance._impl = genn.genann_read(file_ptr)
         finally:
             with nogil:
                 fclose(file_ptr)
@@ -355,7 +357,7 @@ cdef class GenannNetwork:
 
 
 cdef class FannNetwork:
-    cdef nnet.fann* _impl
+    cdef ffann.fann* _impl
     cdef bint _owns_state
 
     def __cinit__(self, layers=None, connection_rate=1.0):
@@ -391,9 +393,9 @@ cdef class FannNetwork:
                 # Release GIL during network construction
                 with nogil:
                     if is_fully_connected:
-                        self._impl = nnet.fann_create_standard_array(num_layers, layer_array)
+                        self._impl = ffann.fann_create_standard_array(num_layers, layer_array)
                     else:
-                        self._impl = nnet.fann_create_sparse_array(c_rate, num_layers, layer_array)
+                        self._impl = ffann.fann_create_sparse_array(c_rate, num_layers, layer_array)
 
                 if self._impl == NULL:
                     raise MemoryError("failed to allocate FANN network")
@@ -405,7 +407,7 @@ cdef class FannNetwork:
         if self._owns_state and self._impl != NULL:
             # Release GIL during cleanup
             with nogil:
-                nnet.fann_destroy(self._impl)
+                ffann.fann_destroy(self._impl)
             self._impl = NULL
             self._owns_state = False
 
@@ -413,31 +415,31 @@ cdef class FannNetwork:
     def input_size(self):
         if self._impl == NULL:
             raise RuntimeError("network not initialized")
-        return nnet.fann_get_num_input(self._impl)
+        return ffann.fann_get_num_input(self._impl)
 
     @property
     def output_size(self):
         if self._impl == NULL:
             raise RuntimeError("network not initialized")
-        return nnet.fann_get_num_output(self._impl)
+        return ffann.fann_get_num_output(self._impl)
 
     @property
     def total_neurons(self):
         if self._impl == NULL:
             raise RuntimeError("network not initialized")
-        return nnet.fann_get_total_neurons(self._impl)
+        return ffann.fann_get_total_neurons(self._impl)
 
     @property
     def total_connections(self):
         if self._impl == NULL:
             raise RuntimeError("network not initialized")
-        return nnet.fann_get_total_connections(self._impl)
+        return ffann.fann_get_total_connections(self._impl)
 
     @property
     def num_layers(self):
         if self._impl == NULL:
             raise RuntimeError("network not initialized")
-        return nnet.fann_get_num_layers(self._impl)
+        return ffann.fann_get_num_layers(self._impl)
 
     @property
     def layers(self):
@@ -448,12 +450,12 @@ cdef class FannNetwork:
         if self._impl == NULL:
             raise RuntimeError("network not initialized")
 
-        num_layers = nnet.fann_get_num_layers(self._impl)
+        num_layers = ffann.fann_get_num_layers(self._impl)
         layer_array = <unsigned int*>malloc(num_layers * sizeof(unsigned int))
         if layer_array == NULL:
             raise MemoryError("failed to allocate layer array")
         try:
-            nnet.fann_get_layer_array(self._impl, layer_array)
+            ffann.fann_get_layer_array(self._impl, layer_array)
             return [layer_array[i] for i in range(num_layers)]
         finally:
             free(layer_array)
@@ -462,25 +464,25 @@ cdef class FannNetwork:
     def learning_rate(self):
         if self._impl == NULL:
             raise RuntimeError("network not initialized")
-        return nnet.fann_get_learning_rate(self._impl)
+        return ffann.fann_get_learning_rate(self._impl)
 
     @learning_rate.setter
     def learning_rate(self, float rate):
         if self._impl == NULL:
             raise RuntimeError("network not initialized")
-        nnet.fann_set_learning_rate(self._impl, rate)
+        ffann.fann_set_learning_rate(self._impl, rate)
 
     @property
     def learning_momentum(self):
         if self._impl == NULL:
             raise RuntimeError("network not initialized")
-        return nnet.fann_get_learning_momentum(self._impl)
+        return ffann.fann_get_learning_momentum(self._impl)
 
     @learning_momentum.setter
     def learning_momentum(self, float momentum):
         if self._impl == NULL:
             raise RuntimeError("network not initialized")
-        nnet.fann_set_learning_momentum(self._impl, momentum)
+        ffann.fann_set_learning_momentum(self._impl, momentum)
 
     cpdef list predict(self, object inputs):
         if self._impl == NULL:
@@ -488,7 +490,7 @@ cdef class FannNetwork:
 
         # Convert to memoryview - handles buffer protocol objects
         cdef float[::1] input_mv
-        cdef nnet.fann_type* output_ptr
+        cdef ffann.fann_type* output_ptr
         cdef int i
         cdef unsigned int num_outputs
 
@@ -508,7 +510,7 @@ cdef class FannNetwork:
 
         # Release GIL during expensive C computation
         with nogil:
-            output_ptr = nnet.fann_run(self._impl, &input_mv[0])
+            output_ptr = ffann.fann_run(self._impl, &input_mv[0])
 
         # Build output list (requires GIL)
         return [output_ptr[i] for i in range(num_outputs)]
@@ -545,14 +547,14 @@ cdef class FannNetwork:
 
         # Release GIL during expensive C computation
         with nogil:
-            nnet.fann_train(self._impl, &input_mv[0], &target_mv[0])
+            ffann.fann_train(self._impl, &input_mv[0], &target_mv[0])
 
     cpdef void randomize_weights(self, float min_weight=-0.1, float max_weight=0.1):
         if self._impl == NULL:
             raise RuntimeError("network not initialized")
         # Release GIL during randomization
         with nogil:
-            nnet.fann_randomize_weights(self._impl, min_weight, max_weight)
+            ffann.fann_randomize_weights(self._impl, min_weight, max_weight)
 
     def copy(self):
         if self._impl == NULL:
@@ -561,7 +563,7 @@ cdef class FannNetwork:
         new_network._owns_state = False
         # Release GIL during copy
         with nogil:
-            new_network._impl = nnet.fann_copy(self._impl)
+            new_network._impl = ffann.fann_copy(self._impl)
         if new_network._impl == NULL:
             raise MemoryError("failed to copy FANN network")
         new_network._owns_state = True
@@ -575,7 +577,7 @@ cdef class FannNetwork:
         cdef int result
         # Release GIL during file I/O
         with nogil:
-            result = nnet.fann_save(self._impl, c_path)
+            result = ffann.fann_save(self._impl, c_path)
         if result == -1:
             raise IOError(f"failed to save FANN network to {path}")
 
@@ -588,11 +590,12 @@ cdef class FannNetwork:
         cdef const char* c_path = encoded
         # Release GIL during file I/O
         with nogil:
-            instance._impl = nnet.fann_create_from_file(c_path)
+            instance._impl = ffann.fann_create_from_file(c_path)
         if instance._impl == NULL:
             raise IOError(f"failed to load FANN network from {path}")
         instance._owns_state = True
         return instance
+
 
 cdef class FannNetworkDouble:
     """Float64 (double precision) FANN neural network implementation."""
