@@ -1,17 +1,24 @@
 # cynn
 
-A Cython wrapper for the Tinn neural network library - a minimal, dependency-free neural network implementation in C.
+A Cython wrapper for minimal, dependency-free neural network libraries in C.
 
 ## Overview
 
-cynn provides Python bindings to the [Tinn](https://github.com/glouw/tinn) library, a tiny neural network library written in pure C. The project uses Cython to create efficient Python wrappers around the C implementation, allowing you to train and use neural networks with minimal overhead.
+cynn provides Python bindings to two lightweight neural network libraries:
+- [Tinn](https://github.com/glouw/tinn) - A tiny 3-layer neural network library
+- [Genann](https://github.com/codeplea/genann) - A minimal multi-layer neural network library
+
+The project uses Cython to create efficient Python wrappers around the C implementations, allowing you to train and use neural networks with minimal overhead.
 
 ## Features
 
-- Simple 3-layer neural network architecture (input, hidden, output)
+- **Two network implementations:**
+  - `TinnNetwork`: Simple 3-layer architecture (input, hidden, output) using float32
+  - `GenannNetwork`: Flexible multi-layer architecture with arbitrary depth using float64
 - Backpropagation training with configurable learning rate
 - Save/load trained models to disk
 - Buffer protocol support - works with lists, tuples, array.array, NumPy arrays, etc.
+- **GIL-free execution** - true multithreading support for parallel inference/training
 - Fast C implementation with Python convenience
 - Zero required dependencies (NumPy is optional)
 
@@ -28,7 +35,7 @@ cynn provides Python bindings to the [Tinn](https://github.com/glouw/tinn) libra
 
 ```bash
 # Clone the repository
-git clone <repository-url>
+git clone https://github.com/shakfu/cynn
 cd cynn
 
 # Build and install
@@ -40,7 +47,7 @@ uv sync
 
 ## Usage
 
-### Basic Example
+### Basic Example - TinnNetwork
 
 ```python
 from cynn import TinnNetwork
@@ -60,11 +67,45 @@ loss = net.train(inputs, targets, learning_rate)
 print(f"Loss: {loss}")
 ```
 
+### Basic Example - GenannNetwork
+
+```python
+from cynn import GenannNetwork
+
+# Create a network: 2 inputs, 2 hidden layers with 4 neurons each, 1 output
+net = GenannNetwork(2, 2, 4, 1)
+
+# Make a prediction
+inputs = [0.5, 0.3]
+output = net.predict(inputs)
+print(f"Prediction: {output}")
+
+# Train the network
+targets = [0.8]
+learning_rate = 0.1
+net.train(inputs, targets, learning_rate)
+
+# GenannNetwork has additional features
+print(f"Total weights: {net.total_weights}")
+print(f"Total neurons: {net.total_neurons}")
+
+# Create a copy of the network
+net_copy = net.copy()
+
+# Randomize weights
+net.randomize()
+```
+
 ### XOR Problem
 
 ```python
-from cynn import TinnNetwork
+from cynn import TinnNetwork, seed
 import random
+import time
+
+# Seed random number generators
+seed(int(time.time()))
+random.seed(int(time.time()))
 
 # XOR training data
 xor_data = [
@@ -77,11 +118,10 @@ xor_data = [
 # Create network
 net = TinnNetwork(2, 4, 1)
 
-# Train with learning rate annealing
-rate = 1.0
-anneal = 0.99
+# Train with constant learning rate
+rate = 0.5
 
-for epoch in range(100):
+for epoch in range(3000):
     random.shuffle(xor_data)
     total_error = 0.0
 
@@ -89,17 +129,34 @@ for epoch in range(100):
         error = net.train(inputs, targets, rate)
         total_error += error
 
-    rate *= anneal
     avg_error = total_error / len(xor_data)
 
-    if epoch % 20 == 0:
+    if epoch % 500 == 0:
         print(f"Epoch {epoch}: avg error = {avg_error:.6f}")
 
 # Test predictions
 for inputs, expected in xor_data:
     pred = net.predict(inputs)
-    print(f"{inputs} -> {pred[0]:.4f} (expected {expected[0]})")
+    result = "✓" if abs(pred[0] - expected[0]) < 0.3 else "✗"
+    print(f"{result} {inputs} -> {pred[0]:.4f} (expected {expected[0]})")
 ```
+
+Example output:
+
+```text
+% uv run python tests/examples/xor_problem.py
+Epoch 0: avg error = 0.129680
+Epoch 500: avg error = 0.127645
+Epoch 1000: avg error = 0.123747
+Epoch 1500: avg error = 0.029109
+Epoch 2000: avg error = 0.008168
+Epoch 2500: avg error = 0.004388
+✓ [0.0, 0.0] -> 0.0893 (expected 0.0)
+✓ [1.0, 0.0] -> 0.9285 (expected 1.0)
+✓ [0.0, 1.0] -> 0.9284 (expected 1.0)
+✓ [1.0, 1.0] -> 0.0721 (expected 0.0)
+```
+
 
 ### NumPy Support
 
@@ -191,7 +248,8 @@ cynn/
 │       ├── nnet.pxd          # C type declarations
 │       └── CMakeLists.txt    # Build configuration
 ├── thirdparty/
-│   └── tinn/                 # Vendored Tinn C library
+│   ├── tinn/                 # Vendored Tinn C library
+│   └── genann/               # Vendored GENANN C library
 ├── tests/                    # pytest test suite
 ├── CMakeLists.txt            # Root CMake config
 ├── Makefile                  # Build shortcuts
@@ -200,6 +258,14 @@ cynn/
 
 ## API Reference
 
+### seed()
+
+```python
+def seed(seed_value: int = 0) -> None
+```
+
+Seed the C random number generator used for weight initialization. If seed_value is 0 (default), uses current time. Call this before creating networks for reproducible results.
+
 ### TinnNetwork
 
 ```python
@@ -207,7 +273,7 @@ class TinnNetwork:
     def __init__(self, inputs: int, hidden: int, outputs: int)
 ```
 
-Create a new neural network.
+Create a new 3-layer neural network (float32 precision).
 
 **Parameters:**
 - `inputs`: Number of input neurons
@@ -247,19 +313,128 @@ def load(cls, path: str | bytes | os.PathLike) -> TinnNetwork
 ```
 Load a network from a file.
 
+### GenannNetwork
+
+```python
+class GenannNetwork:
+    def __init__(self, inputs: int, hidden_layers: int, hidden: int, outputs: int)
+```
+
+Create a new multi-layer neural network (float64 precision).
+
+**Parameters:**
+- `inputs`: Number of input neurons
+- `hidden_layers`: Number of hidden layers
+- `hidden`: Number of neurons per hidden layer
+- `outputs`: Number of output neurons
+
+**Properties:**
+- `input_size`: Number of inputs
+- `hidden_layers`: Number of hidden layers
+- `hidden_size`: Number of neurons per hidden layer
+- `output_size`: Number of outputs
+- `shape`: Tuple of (inputs, hidden_layers, hidden, outputs)
+- `total_weights`: Total number of weights in the network
+- `total_neurons`: Total number of neurons plus inputs
+
+**Methods:**
+
+#### predict()
+```python
+def predict(self, inputs: list[float]) -> list[float]
+```
+Make a prediction given input values.
+
+#### train()
+```python
+def train(self, inputs: list[float], targets: list[float], rate: float) -> None
+```
+Train the network on one example using backpropagation.
+
+#### randomize()
+```python
+def randomize(self) -> None
+```
+Randomize all network weights.
+
+#### copy()
+```python
+def copy(self) -> GenannNetwork
+```
+Create a deep copy of the network.
+
+#### save()
+```python
+def save(self, path: str | bytes | os.PathLike) -> None
+```
+Save the network weights to a file.
+
+#### load()
+```python
+@classmethod
+def load(cls, path: str | bytes | os.PathLike) -> GenannNetwork
+```
+Load a network from a file.
+
+## Choosing Between TinnNetwork and GenannNetwork
+
+**Use TinnNetwork when:**
+- You need a simple 3-layer network
+- Memory efficiency is important (float32 uses less memory)
+- You want the training method to return loss values
+- You prefer a simpler API
+
+**Use GenannNetwork when:**
+- You need multiple hidden layers (deep networks)
+- Higher precision is required (float64)
+- You need to copy networks
+- You want to randomize weights after creation
+- You need to query total weights/neurons
+
 ## Performance Considerations
 
 - The C implementation is fast but operates on single examples (no batch processing)
+- **GIL-free execution**: All computational operations (`train`, `predict`, network creation) release the Python GIL, enabling true parallel execution across multiple threads
+- Thread-safe: Multiple threads can safely share the same network for predictions
 - For production machine learning, consider TensorFlow, PyTorch, or JAX
 - This library is ideal for:
   - Learning neural network fundamentals
   - Embedded systems with limited resources
   - Simple prediction tasks
+  - Parallel inference workloads
   - Environments where large ML frameworks aren't available
+
+### Multithreading Example
+
+```python
+from concurrent.futures import ThreadPoolExecutor
+from cynn import TinnNetwork
+import numpy as np
+
+# Create a shared network
+net = TinnNetwork(100, 50, 10)
+
+def process_batch(batch_data):
+    """Process a batch of inputs in parallel."""
+    results = []
+    for inputs in batch_data:
+        pred = net.predict(inputs)
+        results.append(pred)
+    return results
+
+# Prepare data batches
+data = [np.random.rand(100).astype(np.float32) for _ in range(1000)]
+batches = [data[i:i+250] for i in range(0, 1000, 250)]
+
+# Process batches in parallel (GIL-free!)
+with ThreadPoolExecutor(max_workers=4) as executor:
+    results = list(executor.map(process_batch, batches))
+```
 
 ## Credits
 
 - [Tinn](https://github.com/glouw/tinn) - Original C neural network library by glouw
+- [Genann](https://github.com/codeplea/genann) - Minimal C neural network library by codeplea
 - Built with [Cython](https://cython.org/)
 - Build system uses [scikit-build-core](https://scikit-build-core.readthedocs.io/)
 
