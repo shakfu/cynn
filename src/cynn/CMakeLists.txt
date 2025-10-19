@@ -12,12 +12,15 @@ target_link_libraries(_core
     PUBLIC
     tinn
     genann
+    floatfann
 )
 
 target_include_directories(_core
     PUBLIC
     ${CMAKE_SOURCE_DIR}/thirdparty/tinn
     ${CMAKE_SOURCE_DIR}/thirdparty/genann
+    ${CMAKE_SOURCE_DIR}/thirdparty/fann/src/include
+    ${CMAKE_BINARY_DIR}/thirdparty/fann/src/include
 )
 
 

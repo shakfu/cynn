@@ -17,14 +17,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Full buffer protocol support (lists, tuples, arrays, NumPy arrays)
   - GIL-free execution for parallel training and inference
   - Save/load functionality using FILE* based I/O
-- Comprehensive type stubs for GenannNetwork in _core.pyi
-- GENANN library integration in CMake build system
+- FannNetwork class wrapping the FANN (Fast Artificial Neural Network) C library
+  - Flexible multi-layer architecture with arbitrary layer configurations
+  - Float32 precision for efficient computation
+  - Support for fully connected and sparse networks (via connection_rate parameter)
+  - Flexible constructor accepting list of layer sizes (e.g., `[2, 4, 3, 1]`)
+  - Properties: `input_size`, `output_size`, `total_neurons`, `total_connections`, `num_layers`, `layers`
+  - Settable learning parameters: `learning_rate`, `learning_momentum`
+  - New methods: `randomize_weights()` for weight initialization, `copy()` for deep copying
+  - Full buffer protocol support (lists, tuples, arrays, NumPy arrays)
+  - GIL-free execution for parallel training and inference
+  - Native FANN format save/load (text-based .fann files)
+- Comprehensive type stubs for GenannNetwork and FannNetwork in _core.pyi
+- GENANN and FANN library integration in CMake build system
 - API comparison documentation in README.md
 
 ### Changed
-- Updated README.md to document both TinnNetwork and GenannNetwork
-- Project description now mentions both Tinn and GENANN libraries
-- Added "Choosing Between TinnNetwork and GenannNetwork" section to README
+- Updated README.md to document TinnNetwork, GenannNetwork, and FannNetwork
+- Project description now mentions Tinn, GENANN, and FANN libraries
+- Added "Choosing Between Network Implementations" section to README
+- Expanded feature comparison table
 
 ## [0.1.0] - 2024
 

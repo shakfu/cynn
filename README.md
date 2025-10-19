@@ -4,17 +4,19 @@ A Cython wrapper for minimal, dependency-free neural network libraries in C.
 
 ## Overview
 
-cynn provides Python bindings to two lightweight neural network libraries:
+cynn provides Python bindings to three lightweight neural network libraries:
 - [Tinn](https://github.com/glouw/tinn) - A tiny 3-layer neural network library
-- [Genann](https://github.com/codeplea/genann) - A minimal multi-layer neural network library
+- [GENANN](https://github.com/codeplea/genann) - A minimal multi-layer neural network library
+- [FANN](https://github.com/libfann/fann) - Fast Artificial Neural Network library
 
 The project uses Cython to create efficient Python wrappers around the C implementations, allowing you to train and use neural networks with minimal overhead.
 
 ## Features
 
-- **Two network implementations:**
+- **Three network implementations:**
   - `TinnNetwork`: Simple 3-layer architecture (input, hidden, output) using float32
   - `GenannNetwork`: Flexible multi-layer architecture with arbitrary depth using float64
+  - `FannNetwork`: Flexible multi-layer architecture with settable learning parameters using float32
 - Backpropagation training with configurable learning rate
 - Save/load trained models to disk
 - Buffer protocol support - works with lists, tuples, array.array, NumPy arrays, etc.
@@ -94,6 +96,42 @@ net_copy = net.copy()
 
 # Randomize weights
 net.randomize()
+```
+
+### Basic Example - FannNetwork
+
+```python
+from cynn import FannNetwork
+
+# Create a network: [2 inputs, 4 hidden layer 1, 3 hidden layer 2, 1 output]
+net = FannNetwork([2, 4, 3, 1])
+
+# Make a prediction
+inputs = [0.5, 0.3]
+output = net.predict(inputs)
+print(f"Prediction: {output}")
+
+# Adjust learning parameters
+net.learning_rate = 0.7
+net.learning_momentum = 0.1
+
+# Train the network
+targets = [0.8]
+net.train(inputs, targets)
+
+# FannNetwork has additional features
+print(f"Network layers: {net.layers}")
+print(f"Total connections: {net.total_connections}")
+print(f"Learning rate: {net.learning_rate}")
+
+# Create a sparse network (50% connectivity)
+sparse_net = FannNetwork([2, 8, 1], connection_rate=0.5)
+
+# Create a copy of the network
+net_copy = net.copy()
+
+# Randomize weights to specific range
+net.randomize_weights(-0.5, 0.5)
 ```
 
 ### XOR Problem
@@ -249,7 +287,8 @@ cynn/
 │       └── CMakeLists.txt    # Build configuration
 ├── thirdparty/
 │   ├── tinn/                 # Vendored Tinn C library
-│   └── genann/               # Vendored GENANN C library
+│   ├── genann/               # Vendored GENANN C library
+│   └── fann/                 # Vendored FANN C library
 ├── tests/                    # pytest test suite
 ├── CMakeLists.txt            # Root CMake config
 ├── Makefile                  # Build shortcuts
@@ -376,13 +415,75 @@ def load(cls, path: str | bytes | os.PathLike) -> GenannNetwork
 ```
 Load a network from a file.
 
-## Choosing Between TinnNetwork and GenannNetwork
+### FannNetwork
+
+```python
+class FannNetwork:
+    def __init__(self, layers: list[int] | None = None, connection_rate: float = 1.0)
+```
+
+Create a new multi-layer neural network (float32 precision) using the FANN library.
+
+**Parameters:**
+- `layers`: List of layer sizes [input, hidden1, ..., hiddenN, output]. Must have at least 2 layers.
+- `connection_rate`: Connection density (0.0 to 1.0). 1.0 = fully connected, < 1.0 = sparse network.
+
+**Properties:**
+- `input_size`: Number of inputs
+- `output_size`: Number of outputs
+- `total_neurons`: Total number of neurons
+- `total_connections`: Total number of connections
+- `num_layers`: Number of layers
+- `layers`: List of neuron counts for each layer
+- `learning_rate`: Get or set the learning rate
+- `learning_momentum`: Get or set the learning momentum
+
+**Methods:**
+
+#### predict()
+```python
+def predict(self, inputs: list[float]) -> list[float]
+```
+Make a prediction given input values.
+
+#### train()
+```python
+def train(self, inputs: list[float], targets: list[float]) -> None
+```
+Train the network on one example using backpropagation. Uses current `learning_rate` and `learning_momentum`.
+
+#### randomize_weights()
+```python
+def randomize_weights(self, min_weight: float = -0.1, max_weight: float = 0.1) -> None
+```
+Randomize all network weights to values in [min_weight, max_weight].
+
+#### copy()
+```python
+def copy(self) -> FannNetwork
+```
+Create a deep copy of the network.
+
+#### save()
+```python
+def save(self, path: str | bytes | os.PathLike) -> None
+```
+Save the network to a file (FANN text format).
+
+#### load()
+```python
+@classmethod
+def load(cls, path: str | bytes | os.PathLike) -> FannNetwork
+```
+Load a network from a file.
+
+## Choosing Between Network Implementations
 
 **Use TinnNetwork when:**
 - You need a simple 3-layer network
 - Memory efficiency is important (float32 uses less memory)
 - You want the training method to return loss values
-- You prefer a simpler API
+- You prefer a simpler API with fixed architecture
 
 **Use GenannNetwork when:**
 - You need multiple hidden layers (deep networks)
@@ -390,6 +491,15 @@ Load a network from a file.
 - You need to copy networks
 - You want to randomize weights after creation
 - You need to query total weights/neurons
+- You prefer the constructor pattern: `GenannNetwork(inputs, hidden_layers, hidden_size, outputs)`
+
+**Use FannNetwork when:**
+- You need flexible multi-layer architectures
+- You want to control learning rate and momentum during training
+- You need sparse networks (partial connectivity)
+- You prefer list-based layer specification: `FannNetwork([2, 4, 3, 1])`
+- You want settable learning parameters
+- Memory efficiency is important (float32 uses less memory than float64)
 
 ## Performance Considerations
 
@@ -434,7 +544,8 @@ with ThreadPoolExecutor(max_workers=4) as executor:
 ## Credits
 
 - [Tinn](https://github.com/glouw/tinn) - Original C neural network library by glouw
-- [Genann](https://github.com/codeplea/genann) - Minimal C neural network library by codeplea
+- [GENANN](https://github.com/codeplea/genann) - Minimal C neural network library by codeplea
+- [FANN](https://github.com/libfann/fann) - Fast Artificial Neural Network library by Steffen Nissen
 - Built with [Cython](https://cython.org/)
 - Build system uses [scikit-build-core](https://scikit-build-core.readthedocs.io/)
 
