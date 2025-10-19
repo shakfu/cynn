@@ -39,6 +39,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - API comparison documentation in README.md
 
 ### Changed
+- Refactored Cython declarations for better modularity and maintainability
+  - Split monolithic `nnet.pxd` into library-specific declaration files
+  - Created `tinn.pxd` for Tinn C library declarations
+  - Created `genann.pxd` for GENANN C library declarations
+  - Created `ffann.pxd` for float32 FANN C library declarations
+  - Created `dfann.pxd` for float64 FANN C library declarations
+  - Updated `_core.pyx` imports to use new modular declaration files
+  - Improved code organization and reduced coupling between neural network backends
 - Updated README.md to document TinnNetwork, GenannNetwork, FannNetwork, and FannNetworkDouble
 - Project description now mentions Tinn, GENANN, and FANN libraries
 - Added "Choosing Between Network Implementations" section to README
