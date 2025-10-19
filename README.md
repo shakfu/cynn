@@ -13,10 +13,11 @@ The project uses Cython to create efficient Python wrappers around the C impleme
 
 ## Features
 
-- **Three network implementations:**
+- **Four network implementations:**
   - `TinnNetwork`: Simple 3-layer architecture (input, hidden, output) using float32
   - `GenannNetwork`: Flexible multi-layer architecture with arbitrary depth using float64
   - `FannNetwork`: Flexible multi-layer architecture with settable learning parameters using float32
+  - `FannNetworkDouble`: Same as FannNetwork but with float64 precision
 - Backpropagation training with configurable learning rate
 - Save/load trained models to disk
 - Buffer protocol support - works with lists, tuples, array.array, NumPy arrays, etc.
@@ -477,7 +478,55 @@ def load(cls, path: str | bytes | os.PathLike) -> FannNetwork
 ```
 Load a network from a file.
 
+### FannNetworkDouble
+
+```python
+class FannNetworkDouble:
+    def __init__(self, layers: list[int] | None = None, connection_rate: float = 1.0)
+```
+
+Create a new multi-layer neural network (float64 precision) using the FANN library. FannNetworkDouble has the identical API to FannNetwork but uses double precision for better numerical stability.
+
+**Parameters:**
+- `layers`: List of layer sizes [input, hidden1, ..., hiddenN, output]. Must have at least 2 layers.
+- `connection_rate`: Connection density (0.0 to 1.0). 1.0 = fully connected, < 1.0 = sparse network.
+
+**Properties:**
+Same as FannNetwork: `input_size`, `output_size`, `total_neurons`, `total_connections`, `num_layers`, `layers`, `learning_rate`, `learning_momentum`
+
+**Methods:**
+Same as FannNetwork: `predict()`, `train()`, `randomize_weights()`, `copy()`, `save()`, `load()`
+
+**Example:**
+```python
+from cynn import FannNetworkDouble
+import numpy as np
+
+# Create network with float64 precision
+net = FannNetworkDouble([2, 4, 3, 1])
+
+# Works seamlessly with NumPy's default float64
+inputs = np.array([0.5, 0.3])  # dtype=float64 by default
+targets = np.array([0.8])
+
+# Train and predict with higher precision
+net.train(inputs, targets)
+prediction = net.predict(inputs)
+```
+
 ## Choosing Between Network Implementations
+
+| Feature | TinnNetwork | GenannNetwork | FannNetwork | FannNetworkDouble |
+|---------|-------------|---------------|-------------|-------------------|
+| **Precision** | float32 | float64 | float32 | float64 |
+| **Architecture** | Fixed 3-layer | Multi-layer | Flexible | Flexible |
+| **Layer Spec** | (in, hid, out) | (in, nlayers, hid, out) | [in, h1, h2, out] | [in, h1, h2, out] |
+| **Learning Rate** | Per-train | Per-train | Settable property | Settable property |
+| **Momentum** | No | No | Yes | Yes |
+| **Sparse Networks** | No | No | Yes | Yes |
+| **Returns Loss** | Yes | No | No | No |
+| **Memory** | Low | Medium | Low | Medium |
+| **NumPy Default** | Converts | Native | Converts | Native |
 
 **Use TinnNetwork when:**
 - You need a simple 3-layer network
@@ -500,6 +549,14 @@ Load a network from a file.
 - You prefer list-based layer specification: `FannNetwork([2, 4, 3, 1])`
 - You want settable learning parameters
 - Memory efficiency is important (float32 uses less memory than float64)
+
+**Use FannNetworkDouble when:**
+- You need everything FannNetwork offers but with higher precision
+- Numerical stability is critical (deep networks, long training sessions)
+- You're working primarily with NumPy arrays (which default to float64)
+- You need to minimize accumulation of floating-point errors
+- You're comparing results with other float64-based implementations
+- The extra memory cost (2x per weight) is acceptable
 
 ## Performance Considerations
 

@@ -475,4 +475,154 @@ class FannNetwork:
         """
         ...
 
-__all__ = ['TinnNetwork', 'GenannNetwork', 'FannNetwork', 'square', 'seed']
+__all__ = ['TinnNetwork', 'GenannNetwork', 'FannNetwork', 'FannNetworkDouble', 'square', 'seed']
+
+
+class FannNetworkDouble:
+    """
+    A multi-layer neural network using the FANN library with float64 precision.
+    This class wraps the FANN (Fast Artificial Neural Network) C library's
+    double precision implementation, providing a Python interface for creating,
+    training, and using neural networks with flexible architectures and higher
+    numerical precision than FannNetwork (float32).
+    """
+    def __init__(self, layers: Sequence[int] | None = None, connection_rate: float = 1.0) -> None:
+        """
+        Create a new neural network with float64 precision.
+        Args:
+            layers: List/tuple of layer sizes [input, hidden1, ..., hiddenN, output].
+                    Must have at least 2 layers. If None, creates an uninitialized
+                    network (for use with load()).
+            connection_rate: Connection density (0.0 to 1.0). 1.0 = fully connected,
+                           < 1.0 = sparse network with random connections.
+        Raises:
+            TypeError: If layers is not a list or tuple
+            ValueError: If layers has fewer than 2 elements or any size is <= 0
+            MemoryError: If network allocation fails
+        """
+        ...
+    @property
+    def input_size(self) -> int:
+        """Number of input neurons."""
+        ...
+    @property
+    def output_size(self) -> int:
+        """Number of output neurons."""
+        ...
+    @property
+    def total_neurons(self) -> int:
+        """Total number of neurons in the network."""
+        ...
+    @property
+    def total_connections(self) -> int:
+        """Total number of connections in the network."""
+        ...
+    @property
+    def num_layers(self) -> int:
+        """Number of layers in the network."""
+        ...
+    @property
+    def layers(self) -> list[int]:
+        """List of layer sizes."""
+        ...
+    @property
+    def learning_rate(self) -> float:
+        """Learning rate for training."""
+        ...
+    @learning_rate.setter
+    def learning_rate(self, rate: float) -> None:
+        ...
+    @property
+    def learning_momentum(self) -> float:
+        """Learning momentum for training."""
+        ...
+    @learning_momentum.setter
+    def learning_momentum(self, momentum: float) -> None:
+        ...
+
+    def predict(self, inputs: Sequence[float] | SupportsBufferProtocol) -> list[float]:
+        """
+        Make a prediction using the network.
+
+        Args:
+            inputs: Input values (list, tuple, array, NumPy array, etc.)
+
+        Returns:
+            List of output values
+
+        Raises:
+            ValueError: If input size doesn't match network's input layer
+            RuntimeError: If network not initialized
+        """
+        ...
+
+    def train(self, inputs: Sequence[float] | SupportsBufferProtocol, targets: Sequence[float] | SupportsBufferProtocol) -> None:
+        """
+        Train the network on one example.
+
+        Args:
+            inputs: Input values (list, tuple, array, NumPy array, etc.)
+            targets: Target output values
+
+        Raises:
+            ValueError: If input/target size doesn't match network dimensions
+            RuntimeError: If network not initialized
+        """
+        ...
+
+    def randomize_weights(self, min_weight: float = -0.1, max_weight: float = 0.1) -> None:
+        """
+        Randomize all network weights.
+
+        Args:
+            min_weight: Minimum weight value
+            max_weight: Maximum weight value
+
+        Raises:
+            RuntimeError: If network not initialized
+        """
+        ...
+
+    def copy(self) -> FannNetworkDouble:
+        """
+        Create a deep copy of the network.
+
+        Returns:
+            New FannNetworkDouble instance with copied weights and structure
+
+        Raises:
+            MemoryError: If copy allocation fails
+            RuntimeError: If network not initialized
+        """
+        ...
+
+    def save(self, path: str | bytes | PathLike[str] | PathLike[bytes]) -> None:
+        """
+        Save the network to a file.
+
+        Args:
+            path: File path where the network will be saved
+
+        Raises:
+            TypeError: If path is not str, bytes, or PathLike
+            IOError: If file cannot be saved
+            RuntimeError: If network not initialized
+        """
+        ...
+
+    @classmethod
+    def load(cls, path: str | bytes | PathLike[str] | PathLike[bytes]) -> FannNetworkDouble:
+        """
+        Load a network from a file.
+
+        Args:
+            path: File path from which to load the network
+
+        Returns:
+            Loaded FannNetworkDouble instance
+
+        Raises:
+            TypeError: If path is not str, bytes, or PathLike
+            IOError: If file cannot be opened for reading
+        """
+        ...

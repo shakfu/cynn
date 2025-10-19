@@ -28,15 +28,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Full buffer protocol support (lists, tuples, arrays, NumPy arrays)
   - GIL-free execution for parallel training and inference
   - Native FANN format save/load (text-based .fann files)
-- Comprehensive type stubs for GenannNetwork and FannNetwork in _core.pyi
+- FannNetworkDouble class providing float64 precision alternative to FannNetwork
+  - Identical API to FannNetwork but uses double precision (float64)
+  - Better numerical stability for deep networks or long training sessions
+  - Compatible with NumPy's default float64 arrays without type conversion
+  - Same flexible architecture and sparse network support as FannNetwork
+  - All features from FannNetwork available in double precision
+- Comprehensive type stubs for GenannNetwork, FannNetwork, and FannNetworkDouble in _core.pyi
 - GENANN and FANN library integration in CMake build system
 - API comparison documentation in README.md
 
 ### Changed
-- Updated README.md to document TinnNetwork, GenannNetwork, and FannNetwork
+- Updated README.md to document TinnNetwork, GenannNetwork, FannNetwork, and FannNetworkDouble
 - Project description now mentions Tinn, GENANN, and FANN libraries
 - Added "Choosing Between Network Implementations" section to README
-- Expanded feature comparison table
+- Expanded feature comparison table with precision information
 
 ## [0.1.0] - 2024
 
