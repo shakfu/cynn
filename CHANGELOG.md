@@ -48,7 +48,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Updated comparison table to reflect all networks now return loss
   - Added Training API and Context Manager Support sections to CLAUDE.md
   - Updated type stubs in `_core.pyi` for all network classes
-  - Created `IMPLEMENTATION_SUMMARY.md` with detailed usage examples and migration guide
+  - Created `docs/implementation_summary.md` with detailed usage examples and migration guide
 
 - **Test Suite Enhancements**
   - Updated 13 existing tests to handle new loss return values

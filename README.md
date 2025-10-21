@@ -301,7 +301,7 @@ with net as network:
 output = net.predict([0.5, 0.3])
 ```
 
-Note: The context manager protocol ensures clean resource handling, but cynn networks already handle cleanup automatically via `__dealloc__`, so using `with` is optional and primarily for code clarity.
+Note: The context manager protocol ensures clean resource handling, but cynn networks already handle cleanup automatically via `__dealloc__`, so using `with` is optional and primarily for code clarity. This may be used for other purposes in the future, such as triggering graph drawing.
 
 ### XOR Problem
 

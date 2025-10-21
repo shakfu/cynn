@@ -18,6 +18,11 @@ Low effort, high impact improvements that should be tackled first.
 - [x] Consider adding `predict_with_loss()` methods
 - [x] Ensure consistent return values across all implementations
 
+### Context Manager Support
+- [x] Implement `__enter__`/`__exit__` for all network classes
+- [x] Automatic cleanup of resources
+- [x] Support for temporary networks in `with` blocks
+
 ### More Examples
 - [ ] Regression problem example (housing prices, etc.)
 - [ ] Time series prediction example
@@ -31,11 +36,6 @@ Low effort, high impact improvements that should be tackled first.
 - [ ] Automated wheel building for releases
 - [ ] PyPI publishing automation
 - [ ] Code coverage reporting
-
-### Context Manager Support
-- [ ] Implement `__enter__`/`__exit__` for all network classes
-- [ ] Automatic cleanup of resources
-- [ ] Support for temporary networks in `with` blocks
 
 ## Medium Priority
 
