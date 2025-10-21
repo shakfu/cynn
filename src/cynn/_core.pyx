@@ -251,6 +251,15 @@ cdef class TinnNetwork:
         instance._owns_state = True
         return instance
 
+    def __enter__(self):
+        """Enter context manager."""
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        """Exit context manager. Cleanup handled by __dealloc__."""
+        # Return False to propagate exceptions
+        return False
+
 
 cdef class GenannNetwork:
     cdef genn.genann* _impl
@@ -567,6 +576,15 @@ cdef class GenannNetwork:
             raise ValueError(f"failed to load genann network from {path}")
         instance._owns_state = True
         return instance
+
+    def __enter__(self):
+        """Enter context manager."""
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        """Exit context manager. Cleanup handled by __dealloc__."""
+        # Return False to propagate exceptions
+        return False
 
 
 cdef class FannNetwork:
@@ -931,6 +949,15 @@ cdef class FannNetwork:
         instance._owns_state = True
         return instance
 
+    def __enter__(self):
+        """Enter context manager."""
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        """Exit context manager. Cleanup handled by __dealloc__."""
+        # Return False to propagate exceptions
+        return False
+
 
 cdef class FannNetworkDouble:
     """Float64 (double precision) FANN neural network implementation."""
@@ -1294,6 +1321,15 @@ cdef class FannNetworkDouble:
             raise IOError(f"failed to load FANN network from {path}")
         instance._owns_state = True
         return instance
+
+    def __enter__(self):
+        """Enter context manager."""
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        """Exit context manager. Cleanup handled by __dealloc__."""
+        # Return False to propagate exceptions
+        return False
 
 
 cdef class CNNLayer:
@@ -1827,3 +1863,12 @@ cdef class CNNNetwork:
             while current != NULL:
                 cnn.Layer_dump(current, stdout)
                 current = current.lnext
+
+    def __enter__(self):
+        """Enter context manager."""
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        """Exit context manager. Cleanup handled by __dealloc__."""
+        # Return False to propagate exceptions
+        return False

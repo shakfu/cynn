@@ -270,6 +270,39 @@ for epoch in range(50):
         print(f"Epoch {epoch}: train_loss={train_stats['mean_loss']:.4f}, val_loss={val_loss:.4f}")
 ```
 
+### Context Manager Support
+
+All network types support Python's context manager protocol (`with` statement) for cleaner code:
+
+```python
+from cynn import TinnNetwork, GenannNetwork, CNNNetwork
+
+# Automatic resource management with context manager
+with TinnNetwork(2, 4, 1) as net:
+    output = net.predict([0.5, 0.3])
+    loss = net.train([0.5, 0.3], [0.8], rate=0.5)
+    print(f"Loss: {loss}")
+
+# Works with all network types
+with GenannNetwork(2, 1, 4, 1) as net:
+    loss = net.train([0.5, 0.3], [0.8], rate=0.1)
+
+# Useful for temporary networks
+with CNNNetwork() as net:
+    net.create_input_layer(1, 4, 4)
+    net.add_full_layer(2)
+    result = net.predict([0.5] * 16)
+
+# Networks remain usable after exiting context
+net = TinnNetwork(2, 4, 1)
+with net as network:
+    network.train([0.5, 0.3], [0.8], rate=0.5)
+# Network 'net' is still valid and usable here
+output = net.predict([0.5, 0.3])
+```
+
+Note: The context manager protocol ensures clean resource handling, but cynn networks already handle cleanup automatically via `__dealloc__`, so using `with` is optional and primarily for code clarity.
+
 ### XOR Problem
 
 ```python
@@ -511,6 +544,13 @@ def load(cls, path: str | bytes | os.PathLike) -> TinnNetwork
 ```
 Load a network from a file.
 
+#### \_\_enter\_\_() / \_\_exit\_\_()
+```python
+def __enter__(self) -> TinnNetwork
+def __exit__(self, exc_type, exc_val, exc_tb) -> bool
+```
+Context manager protocol support. Enables use of `with` statement for cleaner code. The network handles cleanup automatically via `__dealloc__`, so context manager usage is optional.
+
 ### GenannNetwork
 
 ```python
@@ -592,6 +632,13 @@ def load(cls, path: str | bytes | os.PathLike) -> GenannNetwork
 ```
 Load a network from a file.
 
+#### \_\_enter\_\_() / \_\_exit\_\_()
+```python
+def __enter__(self) -> GenannNetwork
+def __exit__(self, exc_type, exc_val, exc_tb) -> bool
+```
+Context manager protocol support. Enables use of `with` statement for cleaner code. The network handles cleanup automatically via `__dealloc__`, so context manager usage is optional.
+
 ### FannNetwork
 
 ```python
@@ -671,6 +718,13 @@ def load(cls, path: str | bytes | os.PathLike) -> FannNetwork
 ```
 Load a network from a file.
 
+#### \_\_enter\_\_() / \_\_exit\_\_()
+```python
+def __enter__(self) -> FannNetwork
+def __exit__(self, exc_type, exc_val, exc_tb) -> bool
+```
+Context manager protocol support. Enables use of `with` statement for cleaner code. The network handles cleanup automatically via `__dealloc__`, so context manager usage is optional.
+
 ### FannNetworkDouble
 
 ```python
@@ -688,7 +742,7 @@ Create a new multi-layer neural network (float64 precision) using the FANN libra
 Same as FannNetwork: `input_size`, `output_size`, `total_neurons`, `total_connections`, `num_layers`, `layers`, `learning_rate`, `learning_momentum`
 
 **Methods:**
-Same as FannNetwork: `predict()`, `train()`, `randomize_weights()`, `copy()`, `save()`, `load()`
+Same as FannNetwork: `predict()`, `train()`, `evaluate()`, `train_batch()`, `randomize_weights()`, `copy()`, `save()`, `load()`, `__enter__()`, `__exit__()`
 
 **Example:**
 ```python
@@ -791,6 +845,13 @@ Train on multiple examples in batch. Returns dict with keys: `'mean_loss'`, `'to
 def dump(self) -> None
 ```
 Print debug information about all layers to stdout.
+
+#### \_\_enter\_\_() / \_\_exit\_\_()
+```python
+def __enter__(self) -> CNNNetwork
+def __exit__(self, exc_type, exc_val, exc_tb) -> bool
+```
+Context manager protocol support. Enables use of `with` statement for cleaner code. The network handles cleanup automatically via `__dealloc__`, so context manager usage is optional.
 
 ### CNNLayer
 

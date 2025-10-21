@@ -182,6 +182,14 @@ class TinnNetwork:
         """
         ...
 
+    def __enter__(self) -> TinnNetwork:
+        """Enter context manager, returning self."""
+        ...
+
+    def __exit__(self, exc_type, exc_val, exc_tb) -> bool:
+        """Exit context manager. Cleanup handled by __dealloc__."""
+        ...
+
 class GenannNetwork:
     """
     A multi-layer neural network using the GENANN library.
@@ -389,6 +397,14 @@ class GenannNetwork:
             IOError: If file cannot be opened for reading
             ValueError: If network cannot be loaded from file
         """
+        ...
+
+    def __enter__(self) -> GenannNetwork:
+        """Enter context manager, returning self."""
+        ...
+
+    def __exit__(self, exc_type, exc_val, exc_tb) -> bool:
+        """Exit context manager. Cleanup handled by __dealloc__."""
         ...
 
 class FannNetwork:
@@ -615,6 +631,14 @@ class FannNetwork:
             TypeError: If path is not str, bytes, or PathLike
             IOError: If file cannot be opened for reading
         """
+        ...
+
+    def __enter__(self) -> FannNetwork:
+        """Enter context manager, returning self."""
+        ...
+
+    def __exit__(self, exc_type, exc_val, exc_tb) -> bool:
+        """Exit context manager. Cleanup handled by __dealloc__."""
         ...
 
 class CNNLayer:
@@ -942,6 +966,14 @@ class CNNNetwork:
         """
         ...
 
+    def __enter__(self) -> CNNNetwork:
+        """Enter context manager, returning self."""
+        ...
+
+    def __exit__(self, exc_type, exc_val, exc_tb) -> bool:
+        """Exit context manager. Cleanup handled by __dealloc__."""
+        ...
+
 
 __all__ = ['TinnNetwork', 'GenannNetwork', 'FannNetwork', 'FannNetworkDouble', 'CNNNetwork', 'CNNLayer', 'seed']
 
@@ -1144,4 +1176,12 @@ class FannNetworkDouble:
             TypeError: If path is not str, bytes, or PathLike
             IOError: If file cannot be opened for reading
         """
+        ...
+
+    def __enter__(self) -> FannNetworkDouble:
+        """Enter context manager, returning self."""
+        ...
+
+    def __exit__(self, exc_type, exc_val, exc_tb) -> bool:
+        """Exit context manager. Cleanup handled by __dealloc__."""
         ...

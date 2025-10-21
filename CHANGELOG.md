@@ -25,6 +25,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - GIL-free execution
   - Returns same loss type as `train()` (float32 or float64 depending on network)
 
+- **Context Manager Support** - All network types now implement Python's context manager protocol
+  - `__enter__()` and `__exit__()` methods for all networks (TinnNetwork, GenannNetwork, FannNetwork, FannNetworkDouble, CNNNetwork)
+  - Enables use of `with` statement for cleaner, more Pythonic code
+  - Networks remain usable after exiting context
+  - Automatic resource cleanup via existing `__dealloc__` methods
+  - Comprehensive tests in `tests/test_context_managers.py` (33 new tests)
+  - Type stubs updated with context manager protocol
+
 ### Changed
 - **Standardized Training Interface (BREAKING CHANGE)** - Consistent return values across all network types
   - `GenannNetwork.train()` now returns `float` (mean squared error) instead of `None`
@@ -35,17 +43,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - All `train()` methods now have consistent semantics: train on one example, return loss
 
 - **Enhanced Documentation**
-  - Added "Batch Training", "Evaluating Without Training", and "Training with Validation" sections to README.md
-  - Updated API Reference with `evaluate()` and `train_batch()` for all network types
+  - Added "Batch Training", "Evaluating Without Training", "Training with Validation", and "Context Manager Support" sections to README.md
+  - Updated API Reference with `evaluate()`, `train_batch()`, `__enter__()`, and `__exit__()` for all network types
   - Updated comparison table to reflect all networks now return loss
-  - Added Training API section to CLAUDE.md documenting standardized interface
+  - Added Training API and Context Manager Support sections to CLAUDE.md
   - Updated type stubs in `_core.pyi` for all network classes
   - Created `IMPLEMENTATION_SUMMARY.md` with detailed usage examples and migration guide
 
 - **Test Suite Enhancements**
   - Updated 13 existing tests to handle new loss return values
-  - All 240 tests passing (224 original + 16 new batch training tests)
-  - Tests cover evaluate(), train_batch(), shuffling, edge cases, and consistency
+  - All 273 tests passing (224 original + 16 batch training tests + 33 context manager tests)
+  - Tests cover evaluate(), train_batch(), context managers, shuffling, edge cases, and consistency
 
 ### Fixed
 - Removed non-existent `square` function from `__init__.py` exports
