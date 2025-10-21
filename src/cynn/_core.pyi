@@ -90,6 +90,50 @@ class TinnNetwork:
         """
         ...
 
+    def evaluate(
+        self,
+        inputs: Sequence[float] | memoryview,
+        targets: Sequence[float] | memoryview
+    ) -> float:
+        """
+        Compute loss without training.
+
+        Args:
+            inputs: Input values (length must match input_size)
+            targets: Target output values (length must match output_size)
+
+        Returns:
+            Mean squared error between prediction and targets
+
+        Raises:
+            ValueError: If inputs or targets have wrong length
+        """
+        ...
+
+    def train_batch(
+        self,
+        inputs_list: list,
+        targets_list: list,
+        rate: float,
+        shuffle: bool = False
+    ) -> dict[str, float]:
+        """
+        Train on multiple examples in batch.
+
+        Args:
+            inputs_list: List of input arrays
+            targets_list: List of target arrays
+            rate: Learning rate
+            shuffle: Whether to shuffle the batch before training
+
+        Returns:
+            dict with keys: 'mean_loss', 'total_loss', 'count'
+
+        Raises:
+            ValueError: If inputs_list and targets_list have different lengths
+        """
+        ...
+
     def predict(self, inputs: Sequence[float] | memoryview) -> list[float]:
         """
         Make a prediction given input values.
@@ -202,7 +246,7 @@ class GenannNetwork:
         inputs: Sequence[float] | memoryview,
         targets: Sequence[float] | memoryview,
         rate: float
-    ) -> None:
+    ) -> float:
         """
         Train the network on one example using backpropagation.
 
@@ -216,9 +260,58 @@ class GenannNetwork:
                      Can be any buffer-compatible object with float64 dtype.
             rate: Learning rate (typically 0.0 to 1.0)
 
+        Returns:
+            Mean squared error for this training example
+
         Raises:
             ValueError: If inputs or targets have wrong length
             TypeError: If buffer types are incompatible
+            RuntimeError: If network not initialized
+        """
+        ...
+
+    def evaluate(
+        self,
+        inputs: Sequence[float] | memoryview,
+        targets: Sequence[float] | memoryview
+    ) -> float:
+        """
+        Compute loss without training.
+
+        Args:
+            inputs: Input values (length must match input_size)
+            targets: Target output values (length must match output_size)
+
+        Returns:
+            Mean squared error between prediction and targets
+
+        Raises:
+            ValueError: If inputs or targets have wrong length
+            RuntimeError: If network not initialized
+        """
+        ...
+
+    def train_batch(
+        self,
+        inputs_list: list,
+        targets_list: list,
+        rate: float,
+        shuffle: bool = False
+    ) -> dict[str, float]:
+        """
+        Train on multiple examples in batch.
+
+        Args:
+            inputs_list: List of input arrays
+            targets_list: List of target arrays
+            rate: Learning rate
+            shuffle: Whether to shuffle the batch before training
+
+        Returns:
+            dict with keys: 'mean_loss', 'total_loss', 'count'
+
+        Raises:
+            ValueError: If inputs_list and targets_list have different lengths
             RuntimeError: If network not initialized
         """
         ...
@@ -396,7 +489,7 @@ class FannNetwork:
         self,
         inputs: Sequence[float] | memoryview,
         targets: Sequence[float] | memoryview
-    ) -> None:
+    ) -> float:
         """
         Train the network on one example using backpropagation.
 
@@ -411,9 +504,58 @@ class FannNetwork:
             targets: Target output values (length must match output_size).
                      Can be any buffer-compatible object with float32 dtype.
 
+        Returns:
+            Mean squared error for this training example
+
         Raises:
             ValueError: If inputs or targets have wrong length
             TypeError: If buffer types are incompatible
+            RuntimeError: If network not initialized
+        """
+        ...
+
+    def evaluate(
+        self,
+        inputs: Sequence[float] | memoryview,
+        targets: Sequence[float] | memoryview
+    ) -> float:
+        """
+        Compute loss without training.
+
+        Args:
+            inputs: Input values (length must match input_size)
+            targets: Target output values (length must match output_size)
+
+        Returns:
+            Mean squared error between prediction and targets
+
+        Raises:
+            ValueError: If inputs or targets have wrong length
+            RuntimeError: If network not initialized
+        """
+        ...
+
+    def train_batch(
+        self,
+        inputs_list: list,
+        targets_list: list,
+        shuffle: bool = False
+    ) -> dict[str, float]:
+        """
+        Train on multiple examples in batch.
+
+        Uses the current learning_rate and learning_momentum settings.
+
+        Args:
+            inputs_list: List of input arrays
+            targets_list: List of target arrays
+            shuffle: Whether to shuffle the batch before training
+
+        Returns:
+            dict with keys: 'mean_loss', 'total_loss', 'count'
+
+        Raises:
+            ValueError: If inputs_list and targets_list have different lengths
             RuntimeError: If network not initialized
         """
         ...
@@ -742,6 +884,52 @@ class CNNNetwork:
         """
         ...
 
+    def evaluate(
+        self,
+        inputs: Sequence[float] | memoryview,
+        targets: Sequence[float] | memoryview
+    ) -> float:
+        """
+        Compute loss without training.
+
+        Args:
+            inputs: Input values (length must match input layer size)
+            targets: Target output values (length must match output layer size)
+
+        Returns:
+            Mean squared error between prediction and targets
+
+        Raises:
+            ValueError: If inputs or targets have wrong length
+            RuntimeError: If network has no layers
+        """
+        ...
+
+    def train_batch(
+        self,
+        inputs_list: list,
+        targets_list: list,
+        learning_rate: float,
+        shuffle: bool = False
+    ) -> dict[str, float]:
+        """
+        Train on multiple examples in batch.
+
+        Args:
+            inputs_list: List of input arrays
+            targets_list: List of target arrays
+            learning_rate: Learning rate for weight updates
+            shuffle: Whether to shuffle the batch before training
+
+        Returns:
+            dict with keys: 'mean_loss', 'total_loss', 'count'
+
+        Raises:
+            ValueError: If inputs_list and targets_list have different lengths
+            RuntimeError: If network has no layers
+        """
+        ...
+
     def dump(self) -> None:
         """
         Print debug information about all layers to stdout.
@@ -755,7 +943,7 @@ class CNNNetwork:
         ...
 
 
-__all__ = ['TinnNetwork', 'GenannNetwork', 'FannNetwork', 'FannNetworkDouble', 'CNNNetwork', 'CNNLayer', 'square', 'seed']
+__all__ = ['TinnNetwork', 'GenannNetwork', 'FannNetwork', 'FannNetworkDouble', 'CNNNetwork', 'CNNLayer', 'seed']
 
 
 class FannNetworkDouble:
@@ -836,16 +1024,67 @@ class FannNetworkDouble:
         """
         ...
 
-    def train(self, inputs: Sequence[float] | SupportsBufferProtocol, targets: Sequence[float] | SupportsBufferProtocol) -> None:
+    def train(self, inputs: Sequence[float] | SupportsBufferProtocol, targets: Sequence[float] | SupportsBufferProtocol) -> float:
         """
         Train the network on one example.
+
+        Uses the current learning_rate and learning_momentum settings.
 
         Args:
             inputs: Input values (list, tuple, array, NumPy array, etc.)
             targets: Target output values
 
+        Returns:
+            Mean squared error for this training example
+
         Raises:
             ValueError: If input/target size doesn't match network dimensions
+            RuntimeError: If network not initialized
+        """
+        ...
+
+    def evaluate(
+        self,
+        inputs: Sequence[float] | SupportsBufferProtocol,
+        targets: Sequence[float] | SupportsBufferProtocol
+    ) -> float:
+        """
+        Compute loss without training.
+
+        Args:
+            inputs: Input values
+            targets: Target output values
+
+        Returns:
+            Mean squared error between prediction and targets
+
+        Raises:
+            ValueError: If inputs or targets have wrong length
+            RuntimeError: If network not initialized
+        """
+        ...
+
+    def train_batch(
+        self,
+        inputs_list: list,
+        targets_list: list,
+        shuffle: bool = False
+    ) -> dict[str, float]:
+        """
+        Train on multiple examples in batch.
+
+        Uses the current learning_rate and learning_momentum settings.
+
+        Args:
+            inputs_list: List of input arrays
+            targets_list: List of target arrays
+            shuffle: Whether to shuffle the batch before training
+
+        Returns:
+            dict with keys: 'mean_loss', 'total_loss', 'count'
+
+        Raises:
+            ValueError: If inputs_list and targets_list have different lengths
             RuntimeError: If network not initialized
         """
         ...

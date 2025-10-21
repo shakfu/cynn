@@ -88,7 +88,8 @@ print(f"Prediction: {output}")
 # Train the network
 targets = [0.8]
 learning_rate = 0.1
-net.train(inputs, targets, learning_rate)
+loss = net.train(inputs, targets, learning_rate)
+print(f"Loss: {loss}")
 
 # GenannNetwork has additional features
 print(f"Total weights: {net.total_weights}")
@@ -155,7 +156,8 @@ net.learning_momentum = 0.1
 
 # Train the network
 targets = [0.8]
-net.train(inputs, targets)
+loss = net.train(inputs, targets)
+print(f"Loss: {loss}")
 
 # FannNetwork has additional features
 print(f"Network layers: {net.layers}")
@@ -170,6 +172,102 @@ net_copy = net.copy()
 
 # Randomize weights to specific range
 net.randomize_weights(-0.5, 0.5)
+```
+
+### Batch Training
+
+All network types support batch training for improved efficiency:
+
+```python
+from cynn import GenannNetwork
+
+net = GenannNetwork(2, 1, 4, 1)
+
+# Prepare batch data (XOR problem)
+inputs_list = [
+    [0.0, 0.0],
+    [0.0, 1.0],
+    [1.0, 0.0],
+    [1.0, 1.0]
+]
+targets_list = [
+    [0.0],
+    [1.0],
+    [1.0],
+    [0.0]
+]
+
+# Train on entire batch with optional shuffling
+stats = net.train_batch(inputs_list, targets_list, rate=0.1, shuffle=True)
+
+print(f"Batch mean loss: {stats['mean_loss']}")
+print(f"Batch total loss: {stats['total_loss']}")
+print(f"Examples trained: {stats['count']}")
+
+# Train for multiple epochs
+for epoch in range(100):
+    stats = net.train_batch(inputs_list, targets_list, rate=0.1, shuffle=True)
+    if epoch % 10 == 0:
+        print(f"Epoch {epoch}: loss = {stats['mean_loss']:.4f}")
+```
+
+### Evaluating Without Training
+
+Use `evaluate()` to compute loss without updating weights (useful for validation):
+
+```python
+from cynn import TinnNetwork
+
+net = TinnNetwork(2, 4, 1)
+
+# Training data
+train_inputs = [0.5, 0.3]
+train_targets = [0.8]
+
+# Validation data
+val_inputs = [0.4, 0.6]
+val_targets = [0.7]
+
+# Train on training data
+train_loss = net.train(train_inputs, train_targets, rate=0.5)
+print(f"Training loss: {train_loss}")
+
+# Evaluate on validation data (no weight updates)
+val_loss = net.evaluate(val_inputs, val_targets)
+print(f"Validation loss: {val_loss}")
+
+# Verify evaluate doesn't change weights
+val_loss2 = net.evaluate(val_inputs, val_targets)
+assert val_loss == val_loss2  # Should be identical
+```
+
+### Training with Validation
+
+Combine batch training with evaluation for train/validation splits:
+
+```python
+from cynn import FannNetwork
+
+net = FannNetwork([2, 8, 1])
+net.learning_rate = 0.5
+
+# Split data into train/validation
+train_inputs = [[0.0, 0.0], [0.0, 1.0]]
+train_targets = [[0.0], [1.0]]
+
+val_inputs = [[1.0, 0.0], [1.0, 1.0]]
+val_targets = [[1.0], [0.0]]
+
+for epoch in range(50):
+    # Train on training set
+    train_stats = net.train_batch(train_inputs, train_targets, shuffle=True)
+
+    # Evaluate on validation set (no weight updates)
+    val_losses = [net.evaluate(inp, tgt) for inp, tgt in zip(val_inputs, val_targets)]
+    val_loss = sum(val_losses) / len(val_losses)
+
+    if epoch % 10 == 0:
+        print(f"Epoch {epoch}: train_loss={train_stats['mean_loss']:.4f}, val_loss={val_loss:.4f}")
 ```
 
 ### XOR Problem
@@ -380,7 +478,25 @@ Make a prediction given input values.
 ```python
 def train(self, inputs: list[float], targets: list[float], rate: float) -> float
 ```
-Train the network on one example. Returns the error for this training step.
+Train the network on one example. Returns the mean squared error for this training step.
+
+#### evaluate()
+```python
+def evaluate(self, inputs: list[float], targets: list[float]) -> float
+```
+Compute loss without training. Returns mean squared error between prediction and targets.
+
+#### train_batch()
+```python
+def train_batch(
+    self,
+    inputs_list: list,
+    targets_list: list,
+    rate: float,
+    shuffle: bool = False
+) -> dict[str, float]
+```
+Train on multiple examples in batch. Returns dict with keys: `'mean_loss'`, `'total_loss'`, `'count'`.
 
 #### save()
 ```python
@@ -429,9 +545,27 @@ Make a prediction given input values.
 
 #### train()
 ```python
-def train(self, inputs: list[float], targets: list[float], rate: float) -> None
+def train(self, inputs: list[float], targets: list[float], rate: float) -> float
 ```
-Train the network on one example using backpropagation.
+Train the network on one example using backpropagation. Returns mean squared error.
+
+#### evaluate()
+```python
+def evaluate(self, inputs: list[float], targets: list[float]) -> float
+```
+Compute loss without training. Returns mean squared error between prediction and targets.
+
+#### train_batch()
+```python
+def train_batch(
+    self,
+    inputs_list: list,
+    targets_list: list,
+    rate: float,
+    shuffle: bool = False
+) -> dict[str, float]
+```
+Train on multiple examples in batch. Returns dict with keys: `'mean_loss'`, `'total_loss'`, `'count'`.
 
 #### randomize()
 ```python
@@ -491,9 +625,26 @@ Make a prediction given input values.
 
 #### train()
 ```python
-def train(self, inputs: list[float], targets: list[float]) -> None
+def train(self, inputs: list[float], targets: list[float]) -> float
 ```
-Train the network on one example using backpropagation. Uses current `learning_rate` and `learning_momentum`.
+Train the network on one example using backpropagation. Uses current `learning_rate` and `learning_momentum`. Returns mean squared error.
+
+#### evaluate()
+```python
+def evaluate(self, inputs: list[float], targets: list[float]) -> float
+```
+Compute loss without training. Returns mean squared error between prediction and targets.
+
+#### train_batch()
+```python
+def train_batch(
+    self,
+    inputs_list: list,
+    targets_list: list,
+    shuffle: bool = False
+) -> dict[str, float]
+```
+Train on multiple examples in batch. Uses current `learning_rate` and `learning_momentum`. Returns dict with keys: `'mean_loss'`, `'total_loss'`, `'count'`.
 
 #### randomize_weights()
 ```python
@@ -617,6 +768,24 @@ def train(
 ```
 Train the network on one example. Returns mean squared error.
 
+#### evaluate()
+```python
+def evaluate(self, inputs: list[float], targets: list[float]) -> float
+```
+Compute loss without training. Returns mean squared error between prediction and targets.
+
+#### train_batch()
+```python
+def train_batch(
+    self,
+    inputs_list: list,
+    targets_list: list,
+    learning_rate: float,
+    shuffle: bool = False
+) -> dict[str, float]
+```
+Train on multiple examples in batch. Returns dict with keys: `'mean_loss'`, `'total_loss'`, `'count'`.
+
 #### dump()
 ```python
 def dump(self) -> None
@@ -659,7 +828,7 @@ Get the output values of this layer.
 | **Momentum** | No | No | Yes | Yes | No |
 | **Sparse Networks** | No | No | Yes | Yes | No |
 | **Convolutional** | No | No | No | No | Yes |
-| **Returns Loss** | Yes | No | No | No | Yes |
+| **Returns Loss** | Yes | Yes | Yes | Yes | Yes |
 | **Memory** | Low | Medium | Low | Medium | High |
 | **NumPy Default** | Converts | Native | Converts | Native | Native |
 

@@ -111,6 +111,100 @@ cdef class TinnNetwork:
 
         return result
 
+    cpdef float evaluate(self, object inputs, object targets):
+        """
+        Compute loss without training.
+
+        Args:
+            inputs: Input values
+            targets: Target output values
+
+        Returns:
+            Mean squared error between prediction and targets
+        """
+        # Convert to memoryview
+        cdef float[::1] input_mv
+        cdef float[::1] target_mv
+        cdef float* output_ptr
+        cdef float error, diff
+        cdef int i, nops
+
+        try:
+            input_mv = inputs
+        except (TypeError, ValueError):
+            input_mv = array.array('f', inputs)
+
+        try:
+            target_mv = targets
+        except (TypeError, ValueError):
+            target_mv = array.array('f', targets)
+
+        if input_mv.shape[0] != self._impl.nips:
+            raise ValueError(
+                f"expected {self._impl.nips} input values, received {input_mv.shape[0]}"
+            )
+        if target_mv.shape[0] != self._impl.nops:
+            raise ValueError(
+                f"expected {self._impl.nops} target values, received {target_mv.shape[0]}"
+            )
+
+        nops = self._impl.nops
+
+        # Run prediction and compute MSE
+        with nogil:
+            output_ptr = tinn.xtpredict(self._impl, &input_mv[0])
+            error = 0.0
+            for i in range(nops):
+                diff = output_ptr[i] - target_mv[i]
+                error += diff * diff
+            error /= nops
+
+        return error
+
+    cpdef dict train_batch(self, list inputs_list, list targets_list, float rate, bint shuffle=False):
+        """
+        Train on multiple examples in batch.
+
+        Args:
+            inputs_list: List of input arrays
+            targets_list: List of target arrays
+            rate: Learning rate
+            shuffle: Whether to shuffle the batch before training
+
+        Returns:
+            dict with keys: 'mean_loss', 'total_loss', 'count'
+        """
+        cdef int batch_size = len(inputs_list)
+        cdef float total_loss = 0.0
+        cdef float loss
+        cdef int i
+        cdef list indices
+
+        if len(targets_list) != batch_size:
+            raise ValueError(
+                f"inputs_list and targets_list must have same length: {batch_size} vs {len(targets_list)}"
+            )
+
+        if batch_size == 0:
+            return {'mean_loss': 0.0, 'total_loss': 0.0, 'count': 0}
+
+        # Create indices for shuffling
+        indices = list(range(batch_size))
+        if shuffle:
+            import random
+            random.shuffle(indices)
+
+        # Train on each example
+        for i in indices:
+            loss = self.train(inputs_list[i], targets_list[i], rate)
+            total_loss += loss
+
+        return {
+            'mean_loss': total_loss / batch_size,
+            'total_loss': total_loss,
+            'count': batch_size
+        }
+
     cpdef list predict(self, object inputs):
         # Convert to memoryview - handles buffer protocol objects
         cdef float[::1] input_mv
@@ -226,13 +320,27 @@ cdef class GenannNetwork:
             raise RuntimeError("network not initialized")
         return self._impl.total_neurons
 
-    cpdef void train(self, object inputs, object targets, double rate):
+    cpdef double train(self, object inputs, object targets, double rate):
+        """
+        Train the network on one example.
+
+        Args:
+            inputs: Input values
+            targets: Target output values
+            rate: Learning rate
+
+        Returns:
+            Mean squared error for this training example
+        """
         if self._impl == NULL:
             raise RuntimeError("network not initialized")
 
         # Convert to memoryview - handles buffer protocol objects
         cdef double[::1] input_mv
         cdef double[::1] target_mv
+        cdef const double* output_ptr
+        cdef double error, diff
+        cdef int i, nops
 
         # Try to create memoryview from input
         try:
@@ -256,9 +364,117 @@ cdef class GenannNetwork:
                 f"expected {self._impl.outputs} target values, received {target_mv.shape[0]}"
             )
 
+        nops = self._impl.outputs
+
         # Release GIL during expensive C computation
+        # First get outputs to compute error, then train
         with nogil:
+            output_ptr = genn.genann_run(self._impl, &input_mv[0])
+            error = 0.0
+            for i in range(nops):
+                diff = output_ptr[i] - target_mv[i]
+                error += diff * diff
+            error /= nops
             genn.genann_train(self._impl, &input_mv[0], &target_mv[0], rate)
+
+        return error
+
+    cpdef double evaluate(self, object inputs, object targets):
+        """
+        Compute loss without training.
+
+        Args:
+            inputs: Input values
+            targets: Target output values
+
+        Returns:
+            Mean squared error between prediction and targets
+        """
+        if self._impl == NULL:
+            raise RuntimeError("network not initialized")
+
+        # Convert to memoryview
+        cdef double[::1] input_mv
+        cdef double[::1] target_mv
+        cdef const double* output_ptr
+        cdef double error, diff
+        cdef int i, nops
+
+        try:
+            input_mv = inputs
+        except (TypeError, ValueError):
+            input_mv = array.array('d', inputs)
+
+        try:
+            target_mv = targets
+        except (TypeError, ValueError):
+            target_mv = array.array('d', targets)
+
+        if input_mv.shape[0] != self._impl.inputs:
+            raise ValueError(
+                f"expected {self._impl.inputs} input values, received {input_mv.shape[0]}"
+            )
+        if target_mv.shape[0] != self._impl.outputs:
+            raise ValueError(
+                f"expected {self._impl.outputs} target values, received {target_mv.shape[0]}"
+            )
+
+        nops = self._impl.outputs
+
+        # Run prediction and compute MSE
+        with nogil:
+            output_ptr = genn.genann_run(self._impl, &input_mv[0])
+            error = 0.0
+            for i in range(nops):
+                diff = output_ptr[i] - target_mv[i]
+                error += diff * diff
+            error /= nops
+
+        return error
+
+    cpdef dict train_batch(self, list inputs_list, list targets_list, double rate, bint shuffle=False):
+        """
+        Train on multiple examples in batch.
+
+        Args:
+            inputs_list: List of input arrays
+            targets_list: List of target arrays
+            rate: Learning rate
+            shuffle: Whether to shuffle the batch before training
+
+        Returns:
+            dict with keys: 'mean_loss', 'total_loss', 'count'
+        """
+        cdef int batch_size = len(inputs_list)
+        cdef double total_loss = 0.0
+        cdef double loss
+        cdef int i
+        cdef list indices
+
+        if len(targets_list) != batch_size:
+            raise ValueError(
+                f"inputs_list and targets_list must have same length: {batch_size} vs {len(targets_list)}"
+            )
+
+        if batch_size == 0:
+            return {'mean_loss': 0.0, 'total_loss': 0.0, 'count': 0}
+
+        # Create indices for shuffling
+        indices = list(range(batch_size))
+        if shuffle:
+            import random
+            random.shuffle(indices)
+
+        # Train on each example
+        for i in indices:
+            loss = self.train(inputs_list[i], targets_list[i], rate)
+            total_loss += loss
+
+        return {
+            'mean_loss': total_loss / batch_size,
+            'total_loss': total_loss,
+            'count': batch_size
+        }
 
     cpdef list predict(self, object inputs):
         if self._impl == NULL:
@@ -512,13 +728,27 @@ cdef class FannNetwork:
         # Build output list (requires GIL)
         return [output_ptr[i] for i in range(num_outputs)]
 
-    cpdef void train(self, object inputs, object targets):
+    cpdef float train(self, object inputs, object targets):
+        """
+        Train the network on one example.
+
+        Args:
+            inputs: Input values
+            targets: Target output values
+
+        Returns:
+            Mean squared error for this training example
+        """
         if self._impl == NULL:
             raise RuntimeError("network not initialized")
 
         # Convert to memoryview - handles buffer protocol objects
         cdef float[::1] input_mv
         cdef float[::1] target_mv
+        cdef ffann.fann_type* output_ptr
+        cdef float error, diff
+        cdef int i
+        cdef unsigned int num_outputs
 
         # Try to create memoryview from input
         try:
@@ -542,9 +772,117 @@ cdef class FannNetwork:
                 f"expected {self._impl.num_output} target values, received {target_mv.shape[0]}"
             )
 
+        num_outputs = self._impl.num_output
+
         # Release GIL during expensive C computation
+        # First get outputs to compute error, then train
         with nogil:
+            output_ptr = ffann.fann_run(self._impl, &input_mv[0])
+            error = 0.0
+            for i in range(num_outputs):
+                diff = output_ptr[i] - target_mv[i]
+                error += diff * diff
+            error /= num_outputs
             ffann.fann_train(self._impl, &input_mv[0], &target_mv[0])
+
+        return error
+
+    cpdef float evaluate(self, object inputs, object targets):
+        """
+        Compute loss without training.
+
+        Args:
+            inputs: Input values
+            targets: Target output values
+
+        Returns:
+            Mean squared error between prediction and targets
+        """
+        if self._impl == NULL:
+            raise RuntimeError("network not initialized")
+
+        # Convert to memoryview
+        cdef float[::1] input_mv
+        cdef float[::1] target_mv
+        cdef ffann.fann_type* output_ptr
+        cdef float error, diff
+        cdef int i
+        cdef unsigned int num_outputs
+
+        try:
+            input_mv = inputs
+        except (TypeError, ValueError):
+            input_mv = array.array('f', inputs)
+
+        try:
+            target_mv = targets
+        except (TypeError, ValueError):
+            target_mv = array.array('f', targets)
+
+        if input_mv.shape[0] != self._impl.num_input:
+            raise ValueError(
+                f"expected {self._impl.num_input} input values, received {input_mv.shape[0]}"
+            )
+        if target_mv.shape[0] != self._impl.num_output:
+            raise ValueError(
+                f"expected {self._impl.num_output} target values, received {target_mv.shape[0]}"
+            )
+
+        num_outputs = self._impl.num_output
+
+        # Run prediction and compute MSE
+        with nogil:
+            output_ptr = ffann.fann_run(self._impl, &input_mv[0])
+            error = 0.0
+            for i in range(num_outputs):
+                diff = output_ptr[i] - target_mv[i]
+                error += diff * diff
+            error /= num_outputs
+
+        return error
+
+    cpdef dict train_batch(self, list inputs_list, list targets_list, bint shuffle=False):
+        """
+        Train on multiple examples in batch.
+
+        Args:
+            inputs_list: List of input arrays
+            targets_list: List of target arrays
+            shuffle: Whether to shuffle the batch before training
+
+        Returns:
+            dict with keys: 'mean_loss', 'total_loss', 'count'
+        """
+        cdef int batch_size = len(inputs_list)
+        cdef float total_loss = 0.0
+        cdef float loss
+        cdef int i
+        cdef list indices
+
+        if len(targets_list) != batch_size:
+            raise ValueError(
+                f"inputs_list and targets_list must have same length: {batch_size} vs {len(targets_list)}"
+            )
+
+        if batch_size == 0:
+            return {'mean_loss': 0.0, 'total_loss': 0.0, 'count': 0}
+
+        # Create indices for shuffling
+        indices = list(range(batch_size))
+        if shuffle:
+            import random
+            random.shuffle(indices)
+
+        # Train on each example
+        for i in indices:
+            loss = self.train(inputs_list[i], targets_list[i])
+            total_loss += loss
+
+        return {
+            'mean_loss': total_loss / batch_size,
+            'total_loss': total_loss,
+            'count': batch_size
+        }
 
     cpdef void randomize_weights(self, float min_weight=-0.1, float max_weight=0.1):
         if self._impl == NULL:
@@ -754,13 +1092,27 @@ cdef class FannNetworkDouble:
         # Build output list (requires GIL)
         return [output_ptr[i] for i in range(num_outputs)]
 
-    cpdef void train(self, object inputs, object targets):
+    cpdef double train(self, object inputs, object targets):
+        """
+        Train the network on one example.
+
+        Args:
+            inputs: Input values
+            targets: Target output values
+
+        Returns:
+            Mean squared error for this training example
+        """
         if self._impl == NULL:
             raise RuntimeError("network not initialized")
 
         # Convert to memoryview - handles buffer protocol objects
         cdef double[::1] input_mv
         cdef double[::1] target_mv
+        cdef double* output_ptr
+        cdef double error, diff
+        cdef int i
+        cdef unsigned int num_outputs
 
         # Try to create memoryview from input
         try:
@@ -784,9 +1136,117 @@ cdef class FannNetworkDouble:
                 f"expected {self._impl.num_output} target values, received {target_mv.shape[0]}"
             )
 
+        num_outputs = self._impl.num_output
+
         # Release GIL during expensive C computation
+        # First get outputs to compute error, then train
         with nogil:
+            output_ptr = dfann.dfann_run(self._impl, &input_mv[0])
+            error = 0.0
+            for i in range(num_outputs):
+                diff = output_ptr[i] - target_mv[i]
+                error += diff * diff
+            error /= num_outputs
             dfann.dfann_train(self._impl, &input_mv[0], &target_mv[0])
+
+        return error
+
+    cpdef double evaluate(self, object inputs, object targets):
+        """
+        Compute loss without training.
+
+        Args:
+            inputs: Input values
+            targets: Target output values
+
+        Returns:
+            Mean squared error between prediction and targets
+        """
+        if self._impl == NULL:
+            raise RuntimeError("network not initialized")
+
+        # Convert to memoryview
+        cdef double[::1] input_mv
+        cdef double[::1] target_mv
+        cdef double* output_ptr
+        cdef double error, diff
+        cdef int i
+        cdef unsigned int num_outputs
+
+        try:
+            input_mv = inputs
+        except (TypeError, ValueError):
+            input_mv = array.array('d', inputs)
+
+        try:
+            target_mv = targets
+        except (TypeError, ValueError):
+            target_mv = array.array('d', targets)
+
+        if input_mv.shape[0] != self._impl.num_input:
+            raise ValueError(
+                f"expected {self._impl.num_input} input values, received {input_mv.shape[0]}"
+            )
+        if target_mv.shape[0] != self._impl.num_output:
+            raise ValueError(
+                f"expected {self._impl.num_output} target values, received {target_mv.shape[0]}"
+            )
+
+        num_outputs = self._impl.num_output
+
+        # Run prediction and compute MSE
+        with nogil:
+            output_ptr = dfann.dfann_run(self._impl, &input_mv[0])
+            error = 0.0
+            for i in range(num_outputs):
+                diff = output_ptr[i] - target_mv[i]
+                error += diff * diff
+            error /= num_outputs
+
+        return error
+
+    cpdef dict train_batch(self, list inputs_list, list targets_list, bint shuffle=False):
+        """
+        Train on multiple examples in batch.
+
+        Args:
+            inputs_list: List of input arrays
+            targets_list: List of target arrays
+            shuffle: Whether to shuffle the batch before training
+
+        Returns:
+            dict with keys: 'mean_loss', 'total_loss', 'count'
+        """
+        cdef int batch_size = len(inputs_list)
+        cdef double total_loss = 0.0
+        cdef double loss
+        cdef int i
+        cdef list indices
+
+        if len(targets_list) != batch_size:
+            raise ValueError(
+                f"inputs_list and targets_list must have same length: {batch_size} vs {len(targets_list)}"
+            )
+
+        if batch_size == 0:
+            return {'mean_loss': 0.0, 'total_loss': 0.0, 'count': 0}
+
+        # Create indices for shuffling
+        indices = list(range(batch_size))
+        if shuffle:
+            import random
+            random.shuffle(indices)
+
+        # Train on each example
+        for i in indices:
+            loss = self.train(inputs_list[i], targets_list[i])
+            total_loss += loss
+
+        return {
+            'mean_loss': total_loss / batch_size,
+            'total_loss': total_loss,
+            'count': batch_size
+        }
 
     cpdef void randomize_weights(self, double min_weight=-0.1, double max_weight=0.1):
         if self._impl == NULL:
@@ -1246,6 +1706,111 @@ cdef class CNNNetwork:
             cnn.Layer_update(self._output_layer, learning_rate)
 
         return error
+
+    cpdef double evaluate(self, object inputs, object targets):
+        """
+        Compute loss without training.
+
+        Args:
+            inputs: Input values (length must match input layer size)
+            targets: Target output values (length must match output layer size)
+
+        Returns:
+            Mean squared error between prediction and targets
+
+        Raises:
+            RuntimeError: If network has no layers
+            ValueError: If input or target size doesn't match
+        """
+        if self._input_layer == NULL:
+            raise RuntimeError("network has no input layer")
+        if self._output_layer == NULL:
+            raise RuntimeError("network has no output layer")
+
+        # Convert inputs to memoryview
+        cdef double[::1] input_mv
+        try:
+            input_mv = inputs
+        except (TypeError, ValueError):
+            input_mv = array.array('d', inputs)
+
+        # Convert targets to memoryview
+        cdef double[::1] target_mv
+        try:
+            target_mv = targets
+        except (TypeError, ValueError):
+            target_mv = array.array('d', targets)
+
+        cdef int expected_input_size = self._input_layer.nnodes
+        if input_mv.shape[0] != expected_input_size:
+            raise ValueError(
+                f"expected {expected_input_size} input values, received {input_mv.shape[0]}"
+            )
+
+        cdef int expected_output_size = self._output_layer.nnodes
+        if target_mv.shape[0] != expected_output_size:
+            raise ValueError(
+                f"expected {expected_output_size} target values, received {target_mv.shape[0]}"
+            )
+
+        cdef double error, diff
+        cdef int i
+        # Perform forward pass only and compute error manually
+        with nogil:
+            cnn.Layer_setInputs(self._input_layer, &input_mv[0])
+
+        # Compute MSE manually
+        error = 0.0
+        for i in range(expected_output_size):
+            diff = self._output_layer.outputs[i] - target_mv[i]
+            error += diff * diff
+        error /= expected_output_size
+
+        return error
+
+    cpdef dict train_batch(self, list inputs_list, list targets_list, double learning_rate, bint shuffle=False):
+        """
+        Train on multiple examples in batch.
+
+        Args:
+            inputs_list: List of input arrays
+            targets_list: List of target arrays
+            learning_rate: Learning rate for weight updates
+            shuffle: Whether to shuffle the batch before training
+
+        Returns:
+            dict with keys: 'mean_loss', 'total_loss', 'count'
+        """
+        cdef int batch_size = len(inputs_list)
+        cdef double total_loss = 0.0
+        cdef double loss
+        cdef int i
+        cdef list indices
+
+        if len(targets_list) != batch_size:
+            raise ValueError(
+                f"inputs_list and targets_list must have same length: {batch_size} vs {len(targets_list)}"
+            )
+
+        if batch_size == 0:
+            return {'mean_loss': 0.0, 'total_loss': 0.0, 'count': 0}
+
+        # Create indices for shuffling
+        indices = list(range(batch_size))
+        if shuffle:
+            import random
+            random.shuffle(indices)
+
+        # Train on each example
+        for i in indices:
+            loss = self.train(inputs_list[i], targets_list[i], learning_rate)
+            total_loss += loss
+
+        return {
+            'mean_loss': total_loss / batch_size,
+            'total_loss': total_loss,
+            'count': batch_size
+        }
 
     def dump(self):
         """

@@ -1,6 +1,6 @@
 [project]
 name = "cynn"
-version = "0.1.1"
+version = "0.1.2"
 description = "Python bindings to four lightweight neural network libraries."
 readme = "README.md"
 authors = [

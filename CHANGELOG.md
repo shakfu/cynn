@@ -7,6 +7,49 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.2]
+
+### Added
+- **Batch Training Support** - All network types now support efficient batch training
+  - `train_batch(inputs_list, targets_list, [rate], shuffle=False)` method for all networks
+  - Returns dict with `'mean_loss'`, `'total_loss'`, and `'count'` statistics
+  - Optional shuffling for improved convergence
+  - Reduces Python/C overhead compared to training examples individually
+  - GIL-free execution per training example
+  - Comprehensive tests in `tests/test_batch_training.py` (16 new tests)
+
+- **Loss Evaluation Without Training** - All network types now support validation without weight updates
+  - `evaluate(inputs, targets)` method for all networks (TinnNetwork, GenannNetwork, FannNetwork, FannNetworkDouble, CNNNetwork)
+  - Computes mean squared error without modifying network weights
+  - Perfect for validation sets and monitoring generalization
+  - GIL-free execution
+  - Returns same loss type as `train()` (float32 or float64 depending on network)
+
+### Changed
+- **Standardized Training Interface (BREAKING CHANGE)** - Consistent return values across all network types
+  - `GenannNetwork.train()` now returns `float` (mean squared error) instead of `None`
+  - `FannNetwork.train()` now returns `float` (mean squared error) instead of `None`
+  - `FannNetworkDouble.train()` now returns `float` (mean squared error) instead of `None`
+  - `TinnNetwork.train()` and `CNNNetwork.train()` already returned loss (no change)
+  - **Migration**: Code ignoring return values continues to work. Only code explicitly checking for `None` needs updating.
+  - All `train()` methods now have consistent semantics: train on one example, return loss
+
+- **Enhanced Documentation**
+  - Added "Batch Training", "Evaluating Without Training", and "Training with Validation" sections to README.md
+  - Updated API Reference with `evaluate()` and `train_batch()` for all network types
+  - Updated comparison table to reflect all networks now return loss
+  - Added Training API section to CLAUDE.md documenting standardized interface
+  - Updated type stubs in `_core.pyi` for all network classes
+  - Created `IMPLEMENTATION_SUMMARY.md` with detailed usage examples and migration guide
+
+- **Test Suite Enhancements**
+  - Updated 13 existing tests to handle new loss return values
+  - All 240 tests passing (224 original + 16 new batch training tests)
+  - Tests cover evaluate(), train_batch(), shuffling, edge cases, and consistency
+
+### Fixed
+- Removed non-existent `square` function from `__init__.py` exports
+
 ## [0.1.1]
 
 ### Added

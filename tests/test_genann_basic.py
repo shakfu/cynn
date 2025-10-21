@@ -85,11 +85,12 @@ class TestTraining:
     """Test training functionality."""
 
     def test_train_works(self):
-        """Test that train executes without error."""
+        """Test that train executes and returns loss."""
         net = GenannNetwork(2, 1, 3, 1)
-        # GenannNetwork.train() returns None
+        # GenannNetwork.train() returns loss
         result = net.train([0.5, 0.3], [1.0], 0.1)
-        assert result is None
+        assert isinstance(result, float)
+        assert result >= 0.0  # MSE should be non-negative
 
     def test_train_wrong_input_size(self):
         """Test that wrong input size raises ValueError."""

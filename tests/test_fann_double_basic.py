@@ -120,7 +120,8 @@ class TestTraining:
         net = FannNetworkDouble([2, 3, 1])
         # FannNetworkDouble.train() returns None
         result = net.train([0.5, 0.3], [1.0])
-        assert result is None
+        assert isinstance(result, float)
+        assert result >= 0.0  # MSE should be non-negative
 
     def test_train_wrong_input_size(self):
         """Test that wrong input size raises ValueError."""

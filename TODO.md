@@ -7,16 +7,16 @@ Future enhancements and features for the cynn library.
 Low effort, high impact improvements that should be tackled first.
 
 ### Batch Training Methods
-- [ ] Add `train_batch()` methods to all network classes
-- [ ] Process multiple examples in one call to reduce Python/C overhead
-- [ ] Return aggregated statistics (mean loss, total loss, etc.)
-- [ ] Support for shuffling within batch
+- [x] Add `train_batch()` methods to all network classes
+- [x] Process multiple examples in one call to reduce Python/C overhead
+- [x] Return aggregated statistics (mean loss, total loss, etc.)
+- [x] Support for shuffling within batch
 
 ### Standardize Training Interface
-- [ ] Resolve inconsistency: `TinnNetwork.train()` returns loss, others don't
-- [ ] Add `evaluate()` method to all classes for computing loss without training
-- [ ] Consider adding `predict_with_loss()` methods
-- [ ] Ensure consistent return values across all implementations
+- [x] Resolve inconsistency: `TinnNetwork.train()` returns loss, others don't
+- [x] Add `evaluate()` method to all classes for computing loss without training
+- [x] Consider adding `predict_with_loss()` methods
+- [x] Ensure consistent return values across all implementations
 
 ### More Examples
 - [ ] Regression problem example (housing prices, etc.)

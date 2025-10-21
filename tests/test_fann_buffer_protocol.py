@@ -13,7 +13,8 @@ class TestBufferProtocol:
         targets = [0.8]
         result = net.train(inputs, targets)
         # FannNetwork.train() returns None
-        assert result is None
+        assert isinstance(result, float)
+        assert result >= 0.0  # MSE should be non-negative
 
     def test_predict_with_list(self):
         """Test prediction with Python lists."""
@@ -29,7 +30,8 @@ class TestBufferProtocol:
         inputs = (0.5, 0.3)
         targets = (0.8,)
         result = net.train(inputs, targets)
-        assert result is None
+        assert isinstance(result, float)
+        assert result >= 0.0  # MSE should be non-negative
 
     def test_predict_with_tuple(self):
         """Test prediction with tuples."""
@@ -45,7 +47,8 @@ class TestBufferProtocol:
         inputs = array.array('f', [0.5, 0.3])
         targets = array.array('f', [0.8])
         result = net.train(inputs, targets)
-        assert result is None
+        assert isinstance(result, float)
+        assert result >= 0.0  # MSE should be non-negative
 
     def test_predict_with_array(self):
         """Test prediction with array.array (float32)."""
@@ -63,7 +66,8 @@ class TestBufferProtocol:
         inputs = memoryview(inputs_arr)
         targets = memoryview(targets_arr)
         result = net.train(inputs, targets)
-        assert result is None
+        assert isinstance(result, float)
+        assert result >= 0.0  # MSE should be non-negative
 
     def test_predict_with_memoryview(self):
         """Test prediction with memoryview."""
@@ -89,7 +93,8 @@ class TestNumpyCompatibility:
         inputs = np.array([0.5, 0.3], dtype=np.float32)
         targets = np.array([0.8], dtype=np.float32)
         result = net.train(inputs, targets)
-        assert result is None
+        assert isinstance(result, float)
+        assert result >= 0.0  # MSE should be non-negative
 
     @pytest.mark.skipif(
         not pytest.importorskip("numpy", minversion=None),

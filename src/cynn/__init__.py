@@ -1,4 +1,4 @@
-from ._core import TinnNetwork, GenannNetwork, FannNetwork, FannNetworkDouble, CNNNetwork, CNNLayer, square, seed
+from ._core import TinnNetwork, GenannNetwork, FannNetwork, FannNetworkDouble, CNNNetwork, CNNLayer, seed
 
 __all__ = [
     'TinnNetwork',
@@ -7,6 +7,5 @@ __all__ = [
     'FannNetworkDouble',
     'CNNNetwork',
     'CNNLayer',
-    'square',
     'seed',
 ]
