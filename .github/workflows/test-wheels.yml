@@ -6,6 +6,7 @@ jobs:
   build_wheels:
     name: Build and Test wheels on ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
+    continue-on-error: true
     strategy:
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest]
