@@ -7,6 +7,74 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.3]
+
+### Added
+- **KANN Neural Network Library Integration** - Advanced neural networks with LSTM, GRU, and RNN support
+  - `NeuralNetwork` class with factory methods for creating MLPs, LSTMs, GRUs, and simple RNNs
+  - `NeuralNetwork.mlp()`: Create multi-layer perceptrons with arbitrary hidden layer configuration
+  - `NeuralNetwork.lstm()`: Create LSTM networks for sequence modeling
+  - `NeuralNetwork.gru()`: Create GRU networks for sequence modeling
+  - `NeuralNetwork.rnn()`: Create simple RNN networks
+  - Built-in RMSprop optimizer with configurable learning rate
+  - Early stopping with validation fraction and max drop streak
+  - `train()` method for feedforward networks with automatic train/validation splitting
+  - `train_rnn()` method for recurrent networks with backpropagation through time (BPTT)
+  - Gradient clipping support for stable RNN training
+  - `apply()` method for single-example inference
+  - `cost()` method for computing loss over datasets
+  - Save/load functionality for trained models
+  - `clone()` and `unroll()` methods for RNN manipulation
+  - Context manager support (`with` statement)
+
+- **GraphBuilder** - Low-level API for building custom network architectures
+  - Create computational graphs with automatic differentiation
+  - Layer operations: `input()`, `dense()`, `dropout()`, `layernorm()`
+  - Activation functions: `relu()`, `sigmoid()`, `tanh()`, `softmax()`
+  - Recurrent layers: `lstm()`, `gru()`, `rnn()`
+  - Convolutional layers: `conv1d()`, `conv2d()`
+  - Arithmetic operations: `add()`, `sub()`, `mul()`, `matmul()`
+  - Cost layers: `softmax_cross_entropy()`, `sigmoid_cross_entropy()`, `mse_layer()`
+  - `build()` method to create NeuralNetwork from cost node
+
+- **DataSet** - Wrapper for loading tabular data from TSV files
+  - `load()` class method for reading TSV files with row/column names
+  - `split_xy()` for separating features and labels
+  - `to_2d_array()` for converting to Array2D format
+  - Group boundary support for structured data
+
+- **Helper Functions** for sequence modeling
+  - `kann_set_seed()`: Set random seed for reproducibility
+  - `kann_set_verbose()`: Control verbosity of KANN operations
+  - `one_hot_encode()`: Encode integer arrays to one-hot vectors
+  - `one_hot_encode_2d()`: Encode to flat 2D buffer format
+  - `softmax_sample()`: Sample from probability distribution with temperature
+  - `prepare_sequence_data()`: Prepare sequences for RNN training
+  - `list_to_2d_array()`: Convert list of arrays to flat array
+  - `Array2D`: Simple 2D array wrapper for use with memoryviews
+
+- **KANN Constants** - Exposed for network configuration
+  - Cost functions: `COST_BINARY_CROSS_ENTROPY`, `COST_MULTI_CROSS_ENTROPY`, `COST_BINARY_CROSS_ENTROPY_NEG`, `COST_MSE`
+  - Node flags: `KANN_FLAG_IN`, `KANN_FLAG_OUT`, `KANN_FLAG_TRUTH`, `KANN_FLAG_COST`
+  - RNN flags: `RNN_VAR_H0` (variable initial hidden states), `RNN_NORM` (layer normalization)
+  - KAD flags: `KAD_FLAG_VAR`, `KAD_FLAG_CONST`
+
+- **Exception Classes** for KANN-specific error handling
+  - `KannError`: Base exception for KANN errors
+  - `KannModelError`: Error related to model operations
+  - `KannTrainingError`: Error during training
+
+- Vendored KANN C library in `thirdparty/kann/`
+- `kann.pyx` Cython implementation for KANN bindings
+- `kann.pxd` declaration file for KANN C library API
+- Updated CMakeLists.txt to build KANN module with proper include paths
+- Comprehensive README.md documentation with usage examples for all KANN features
+- Updated comparison table to include NeuralNetwork (KANN)
+- Added "Use NeuralNetwork (KANN) when" guidance section
+
+### Fixed
+- Fixed Cython compilation error where `kann.pxd` was not found by adding `-I` include path to CMake build
+
 ## [0.1.2]
 
 ### Added

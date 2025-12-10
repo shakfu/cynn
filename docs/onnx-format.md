@@ -2,7 +2,7 @@
 
 ## Overview
 
-This document outlines a comprehensive plan to add ONNX export functionality to all five cynn network types: TinnNetwork, GenannNetwork, FannNetwork, FannNetworkDouble, and CNNNetwork.
+This document outlines a possible plan to add ONNX export functionality to all five cynn network types: TinnNetwork, GenannNetwork, FannNetwork, FannNetworkDouble, and CNNNetwork.
 
 ## Current State Analysis
 

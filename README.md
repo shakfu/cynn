@@ -5,21 +5,23 @@ A Cython wrapper for minimal, dependency-free neural network libraries in C.
 ## Overview
 
 cynn provides Python bindings to four lightweight neural network libraries:
-- [Tinn](https://github.com/glouw/tinn) - A tiny 3-layer neural network library
-- [GENANN](https://github.com/codeplea/genann) - A minimal multi-layer neural network library
-- [FANN](https://github.com/libfann/fann) - Fast Artificial Neural Network library
-- [nn1](https://github.com/euske/nn1) - Convolutional Neural Network in C
+- [Tinn](https://github.com/glouw/tinn) - A tiny 3-layer neural network library.
+- [GENANN](https://github.com/codeplea/genann) - A minimal multi-layer neural network library.
+- [FANN](https://github.com/libfann/fann) - Fast Artificial Neural Network library.
+- [nn1](https://github.com/euske/nn1) - Convolutional Neural Network library.
+- [kann](https://github.com/attractivechaos/kann) - Multi-layer perceptrons, convolutional neural networks and recurrent neural networks (including LSTM and GRU).
 
 The project uses Cython to create efficient Python wrappers around the C implementations, allowing you to train and use neural networks with minimal overhead.
 
 ## Features
 
-- **Five network implementations:**
+- **Six network implementations:**
   - `TinnNetwork`: Simple 3-layer architecture (input, hidden, output) using float32
   - `GenannNetwork`: Flexible multi-layer architecture with arbitrary depth using float64
   - `FannNetwork`: Flexible multi-layer architecture with settable learning parameters using float32
   - `FannNetworkDouble`: Same as FannNetwork but with float64 precision
   - `CNNNetwork`: Layer-based convolutional neural network with input, conv, and fully-connected layers using float64
+  - `NeuralNetwork` (KANN): Advanced neural networks including MLPs, LSTMs, GRUs, and RNNs using float32
 - Backpropagation training with configurable learning rate
 - Save/load trained models to disk
 - Buffer protocol support - works with lists, tuples, array.array, NumPy arrays, etc.
@@ -172,6 +174,107 @@ net_copy = net.copy()
 
 # Randomize weights to specific range
 net.randomize_weights(-0.5, 0.5)
+```
+
+### Basic Example - NeuralNetwork (KANN)
+
+```python
+from cynn import NeuralNetwork, COST_MSE, COST_MULTI_CROSS_ENTROPY
+import array
+
+# Create a multi-layer perceptron
+net = NeuralNetwork.mlp(
+    input_size=4,
+    hidden_sizes=[16, 8],  # Two hidden layers
+    output_size=3,
+    cost_type=COST_MULTI_CROSS_ENTROPY,
+    dropout=0.1
+)
+
+# Network properties
+print(f"Input dimension: {net.input_dim}")
+print(f"Output dimension: {net.output_dim}")
+print(f"Number of trainable variables: {net.n_var}")
+
+# Prepare data (KANN uses float32 typed memoryviews)
+x_train = array.array('f', [0.1, 0.2, 0.3, 0.4] * 100)  # 100 samples
+y_train = array.array('f', [1.0, 0.0, 0.0] * 100)       # One-hot labels
+
+# Reshape for 2D memoryview (100 samples x 4 features)
+# In practice, use numpy or Array2D helper
+import numpy as np
+x = np.array(x_train, dtype=np.float32).reshape(100, 4)
+y = np.array(y_train, dtype=np.float32).reshape(100, 3)
+
+# Train (returns number of epochs)
+epochs = net.train(x, y, learning_rate=0.001, max_epochs=50)
+print(f"Trained for {epochs} epochs")
+
+# Single inference
+inputs = array.array('f', [0.1, 0.2, 0.3, 0.4])
+output = net.apply(inputs)
+print(f"Prediction: {list(output)}")
+
+# Save and load models
+net.save("model.kann")
+loaded = NeuralNetwork.load("model.kann")
+```
+
+### KANN - LSTM for Sequence Modeling
+
+```python
+from cynn import NeuralNetwork, COST_MULTI_CROSS_ENTROPY
+
+# Create an LSTM network for sequence modeling
+lstm = NeuralNetwork.lstm(
+    input_size=128,    # Vocabulary size (one-hot)
+    hidden_size=256,   # LSTM hidden state size
+    output_size=128,   # Output vocabulary size
+    cost_type=COST_MULTI_CROSS_ENTROPY
+)
+
+# Train on sequences (e.g., for text generation)
+sequences = [
+    [10, 20, 30, 40, 50, 60],  # Token sequences
+    [15, 25, 35, 45, 55, 65],
+    # ... more sequences
+]
+
+history = lstm.train_rnn(
+    sequences,
+    seq_length=32,       # BPTT sequence length
+    vocab_size=128,
+    learning_rate=0.001,
+    max_epochs=100,
+    grad_clip=5.0,       # Gradient clipping
+    verbose=1
+)
+
+print(f"Final loss: {history['loss'][-1]}")
+```
+
+### KANN - Custom Network with GraphBuilder
+
+```python
+from cynn import GraphBuilder
+
+# Build a custom architecture
+builder = GraphBuilder()
+
+# Define network graph
+x = builder.input(10)
+h = builder.dense(x, 32)
+h = builder.relu(h)
+h = builder.dropout(h, 0.2)
+h = builder.dense(h, 16)
+h = builder.tanh(h)
+cost = builder.softmax_cross_entropy(h, 5)
+
+# Create network from graph
+net = builder.build(cost)
+
+# Use like any other KANN network
+print(f"Variables: {net.n_var}")
 ```
 
 ### Batch Training
@@ -450,8 +553,10 @@ cynn/
 ├── src/
 │   └── cynn/
 │       ├── __init__.py       # Public API
-│       ├── _core.pyx         # Cython implementation
+│       ├── _core.pyx         # Cython implementation (Tinn, Genann, FANN, nn1)
 │       ├── _core.pyi         # Type stubs
+│       ├── kann.pyx          # KANN Cython implementation
+│       ├── kann.pxd          # KANN C library declarations
 │       ├── cnn.pxd           # CNN declarations
 │       ├── dfann.pxd         # Double Fann declarations
 │       ├── ffann.pxd         # Float Fann declarations
@@ -462,7 +567,8 @@ cynn/
 │   ├── tinn/                 # Vendored Tinn C library
 │   ├── genann/               # Vendored Genann C library
 │   ├── fann/                 # Vendored Fann C library
-│   └── nn1/                  # Vendored nn1 CNN C library
+│   ├── nn1/                  # Vendored nn1 CNN C library
+│   └── kann/                 # Vendored KANN C library
 ├── tests/                    # pytest test suite
 ├── CMakeLists.txt            # Root CMake config
 ├── Makefile                  # Build shortcuts
@@ -878,20 +984,260 @@ def get_outputs(self) -> list[float]
 ```
 Get the output values of this layer.
 
+### NeuralNetwork (KANN)
+
+```python
+class NeuralNetwork
+```
+
+Advanced neural network class supporting MLPs, LSTMs, GRUs, and simple RNNs (float32 precision). Based on the KANN (Klib Artificial Neural Network) library.
+
+**Factory Methods:**
+
+#### mlp()
+```python
+@staticmethod
+def mlp(
+    input_size: int,
+    hidden_sizes: list[int],
+    output_size: int,
+    cost_type: int = COST_MULTI_CROSS_ENTROPY,
+    dropout: float = 0.0
+) -> NeuralNetwork
+```
+Create a multi-layer perceptron with arbitrary hidden layer configuration.
+
+#### lstm()
+```python
+@staticmethod
+def lstm(
+    input_size: int,
+    hidden_size: int,
+    output_size: int,
+    cost_type: int = COST_MULTI_CROSS_ENTROPY,
+    rnn_flags: int = 0
+) -> NeuralNetwork
+```
+Create an LSTM network for sequence modeling.
+
+#### gru()
+```python
+@staticmethod
+def gru(
+    input_size: int,
+    hidden_size: int,
+    output_size: int,
+    cost_type: int = COST_MULTI_CROSS_ENTROPY,
+    rnn_flags: int = 0
+) -> NeuralNetwork
+```
+Create a GRU network for sequence modeling.
+
+#### rnn()
+```python
+@staticmethod
+def rnn(
+    input_size: int,
+    hidden_size: int,
+    output_size: int,
+    cost_type: int = COST_MULTI_CROSS_ENTROPY,
+    rnn_flags: int = 0
+) -> NeuralNetwork
+```
+Create a simple RNN network.
+
+#### load()
+```python
+@staticmethod
+def load(filename: str) -> NeuralNetwork
+```
+Load a network from a file.
+
+**Properties:**
+- `n_nodes`: Number of nodes in the computational graph
+- `input_dim`: Input dimension
+- `output_dim`: Output dimension
+- `n_var`: Total number of trainable variables
+- `n_const`: Total number of constants
+
+**Methods:**
+
+#### train()
+```python
+def train(
+    self,
+    x: float[:, :],
+    y: float[:, :],
+    learning_rate: float = 0.001,
+    mini_batch_size: int = 64,
+    max_epochs: int = 100,
+    min_epochs: int = 0,
+    max_drop_streak: int = 10,
+    validation_fraction: float = 0.1
+) -> int
+```
+Train the network using built-in feedforward trainer with RMSprop optimizer and early stopping. Returns number of epochs trained.
+
+#### train_rnn()
+```python
+def train_rnn(
+    self,
+    sequences: list,
+    seq_length: int,
+    vocab_size: int,
+    learning_rate: float = 0.001,
+    mini_batch_size: int = 32,
+    max_epochs: int = 100,
+    grad_clip: float = 10.0,
+    validation_fraction: float = 0.1,
+    verbose: int = 1
+) -> dict
+```
+Train RNN/LSTM/GRU using backpropagation through time (BPTT). Returns dict with `'loss'` and `'val_loss'` history lists.
+
+#### apply()
+```python
+def apply(self, x: float[:]) -> array.array
+```
+Apply the network to a single input. Returns output as `array.array('f', ...)`.
+
+#### cost()
+```python
+def cost(self, x: float[:, :], y: float[:, :]) -> float
+```
+Compute the cost over a dataset.
+
+#### save()
+```python
+def save(self, filename: str) -> None
+```
+Save the network to a file.
+
+#### clone()
+```python
+def clone(self, batch_size: int = 1) -> NeuralNetwork
+```
+Clone the network with a different batch size.
+
+#### unroll()
+```python
+def unroll(self, length: int) -> NeuralNetwork
+```
+Unroll an RNN for a specified number of time steps.
+
+#### switch_mode()
+```python
+def switch_mode(self, is_training: bool) -> None
+```
+Switch between training and inference mode.
+
+#### close()
+```python
+def close(self) -> None
+```
+Explicitly release resources.
+
+#### \_\_enter\_\_() / \_\_exit\_\_()
+Context manager protocol support.
+
+### GraphBuilder
+
+```python
+class GraphBuilder
+```
+
+Low-level graph builder for creating custom network architectures.
+
+**Methods:**
+- `input(size)`: Create an input layer
+- `dense(inp, output_size)`: Create a dense (fully connected) layer
+- `dropout(inp, rate)`: Create a dropout layer
+- `layernorm(inp)`: Create a layer normalization layer
+- `relu(inp)`, `sigmoid(inp)`, `tanh(inp)`, `softmax(inp)`: Activation functions
+- `lstm(inp, hidden_size, flags)`, `gru(inp, hidden_size, flags)`, `rnn(inp, hidden_size, flags)`: Recurrent layers
+- `conv1d(inp, n_filters, kernel_size, stride, pad)`: 1D convolution
+- `conv2d(inp, n_filters, k_rows, k_cols, stride_r, stride_c, pad_r, pad_c)`: 2D convolution
+- `add(x, y)`, `sub(x, y)`, `mul(x, y)`, `matmul(x, y)`: Arithmetic operations
+- `softmax_cross_entropy(inp, n_out)`: Softmax + cross-entropy cost
+- `sigmoid_cross_entropy(inp, n_out)`: Sigmoid + binary cross-entropy cost
+- `mse_layer(inp, n_out)`: MSE cost layer
+- `build(cost)`: Build the neural network from the cost node
+
+### DataSet
+
+```python
+class DataSet
+```
+
+Wrapper for loading tabular data from TSV files.
+
+**Methods:**
+- `load(filename)`: Load data from a TSV file
+- `get_row(index)`: Get a single row of data
+- `get_row_name(index)`, `get_col_name(index)`: Get row/column names
+- `split_xy(label_cols)`: Split data into features and labels
+- `to_2d_array()`: Convert to Array2D
+
+**Properties:**
+- `n_rows`, `n_cols`, `n_groups`, `shape`, `row_names`, `col_names`
+
+### KANN Helper Functions
+
+```python
+kann_set_seed(seed: int) -> None
+```
+Set the random seed for reproducibility.
+
+```python
+kann_set_verbose(level: int) -> None
+```
+Set verbosity level for KANN operations.
+
+```python
+one_hot_encode(values: int[:], num_classes: int) -> list
+```
+One-hot encode an array of integer values.
+
+```python
+softmax_sample(probs: float[:], temperature: float = 1.0) -> int
+```
+Sample from a probability distribution with temperature scaling.
+
+```python
+prepare_sequence_data(sequences, seq_length: int, vocab_size: int) -> tuple
+```
+Prepare sequence data for RNN training.
+
+### KANN Constants
+
+**Cost Functions:**
+- `COST_BINARY_CROSS_ENTROPY`: Binary cross-entropy (sigmoid)
+- `COST_MULTI_CROSS_ENTROPY`: Multi-class cross-entropy (softmax)
+- `COST_BINARY_CROSS_ENTROPY_NEG`: Binary cross-entropy for tanh (-1,1)
+- `COST_MSE`: Mean square error
+
+**Node Flags:**
+- `KANN_FLAG_IN`, `KANN_FLAG_OUT`, `KANN_FLAG_TRUTH`, `KANN_FLAG_COST`
+
+**RNN Flags:**
+- `RNN_VAR_H0`: Variable initial hidden states
+- `RNN_NORM`: Layer normalization
+
 ## Choosing Between Network Implementations
 
-| Feature | TinnNetwork | GenannNetwork | FannNetwork | FannNetworkDouble | CNNNetwork |
-|---------|-------------|---------------|-------------|-------------------|------------|
-| **Precision** | float32 | float64 | float32 | float64 | float64 |
-| **Architecture** | Fixed 3-layer | Multi-layer | Flexible | Flexible | Layer-based CNN |
-| **Layer Spec** | (in, hid, out) | (in, nlayers, hid, out) | [in, h1, h2, out] | [in, h1, h2, out] | Build API |
-| **Learning Rate** | Per-train | Per-train | Settable property | Settable property | Per-train |
-| **Momentum** | No | No | Yes | Yes | No |
-| **Sparse Networks** | No | No | Yes | Yes | No |
-| **Convolutional** | No | No | No | No | Yes |
-| **Returns Loss** | Yes | Yes | Yes | Yes | Yes |
-| **Memory** | Low | Medium | Low | Medium | High |
-| **NumPy Default** | Converts | Native | Converts | Native | Native |
+| Feature | TinnNetwork | GenannNetwork | FannNetwork | FannNetworkDouble | CNNNetwork | NeuralNetwork (KANN) |
+|---------|-------------|---------------|-------------|-------------------|------------|---------------------|
+| **Precision** | float32 | float64 | float32 | float64 | float64 | float32 |
+| **Architecture** | Fixed 3-layer | Multi-layer | Flexible | Flexible | Layer-based CNN | MLP/LSTM/GRU/RNN |
+| **Layer Spec** | (in, hid, out) | (in, nlayers, hid, out) | [in, h1, h2, out] | [in, h1, h2, out] | Build API | Factory methods |
+| **Learning Rate** | Per-train | Per-train | Settable property | Settable property | Per-train | Per-train |
+| **Momentum** | No | No | Yes | Yes | No | RMSprop built-in |
+| **Sparse Networks** | No | No | Yes | Yes | No | No |
+| **Convolutional** | No | No | No | No | Yes | Yes (via GraphBuilder) |
+| **Recurrent (RNN)** | No | No | No | No | No | Yes (LSTM/GRU/RNN) |
+| **Returns Loss** | Yes | Yes | Yes | Yes | Yes | Yes |
+| **Memory** | Low | Medium | Low | Medium | High | Medium |
+| **NumPy Default** | Converts | Native | Converts | Native | Native | Converts |
 
 **Use TinnNetwork when:**
 - You need a simple 3-layer network
@@ -932,6 +1278,17 @@ Get the output values of this layer.
 - Implementing image classification, object detection, or computer vision tasks
 - Higher precision is required (float64)
 - You prefer a layer-by-layer building API over fixed architecture
+
+**Use NeuralNetwork (KANN) when:**
+- You need recurrent networks (LSTM, GRU, or simple RNN) for sequence modeling
+- Building text generation, time series prediction, or language models
+- You want built-in RMSprop optimizer with early stopping
+- You need backpropagation through time (BPTT) support
+- You want a computational graph approach with automatic differentiation
+- Building custom architectures with the GraphBuilder API
+- You need convolution layers combined with recurrent layers
+- Training with gradient clipping for RNNs
+- You want built-in train/validation splitting
 
 ## Performance Considerations
 
@@ -979,6 +1336,7 @@ with ThreadPoolExecutor(max_workers=4) as executor:
 - [GENANN](https://github.com/codeplea/genann) - Minimal C neural network library by codeplea
 - [FANN](https://github.com/libfann/fann) - Fast Artificial Neural Network library by Steffen Nissen
 - [nn1](https://github.com/euske/nn1) - Convolutional Neural Network in C by euske
+- [KANN](https://github.com/attractivechaos/kann) - Klib Artificial Neural Network library by Attractive Chaos
 - Built with [Cython](https://cython.org/)
 - Build system uses [scikit-build-core](https://scikit-build-core.readthedocs.io/)
 

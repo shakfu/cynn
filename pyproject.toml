@@ -33,6 +33,10 @@ wheel.exclude = ["*.pxd", "*.pyx"]
 # The CMake build directory. Defaults to a unique temporary directory.
 # build-dir = ""
 
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+
 [build-system]
 requires = ["scikit-build-core>=0.10", "cython"]
 build-backend = "scikit_build_core.build"
