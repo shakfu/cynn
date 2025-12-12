@@ -4,15 +4,14 @@ import pytest
 import array
 import random
 
-np = pytest.importorskip("numpy")
-
 from cynn.kann import (
     KannNeuralNetwork,
-    Array2D,
     COST_MSE,
     COST_MULTI_CROSS_ENTROPY,
     set_seed as kann_set_seed,
 )
+
+np = pytest.importorskip("numpy")
 
 
 class TestMLPTraining:

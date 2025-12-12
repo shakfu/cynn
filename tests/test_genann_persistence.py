@@ -1,5 +1,3 @@
-import pytest
-import tempfile
 from pathlib import Path
 from cynn.genann import GenannNetwork
 

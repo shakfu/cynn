@@ -3,7 +3,7 @@
 import pytest
 from cynn.tinn import TinnNetwork
 from cynn.genann import GenannNetwork
-from cynn.fann import FannNetwork, FannNetworkDouble
+from cynn.fann import FannNetwork
 from cynn.cnn import CNNNetwork
 
 
@@ -15,7 +15,7 @@ class TestEvaluateMethod:
         net = TinnNetwork(2, 4, 1)
 
         # Train to establish weights
-        initial_loss = net.train([0.5, 0.3], [0.8], rate=0.5)
+        net.train([0.5, 0.3], [0.8], rate=0.5)
 
         # Evaluate should return similar loss without changing weights
         eval_loss = net.evaluate([0.5, 0.3], [0.8])
@@ -30,7 +30,7 @@ class TestEvaluateMethod:
         """Test GenannNetwork.evaluate() computes loss without training."""
         net = GenannNetwork(2, 1, 4, 1)
 
-        initial_loss = net.train([0.5, 0.3], [0.8], rate=0.1)
+        net.train([0.5, 0.3], [0.8], rate=0.1)
 
         eval_loss = net.evaluate([0.5, 0.3], [0.8])
         assert isinstance(eval_loss, float)
@@ -45,21 +45,7 @@ class TestEvaluateMethod:
         net = FannNetwork([2, 4, 1])
         net.learning_rate = 0.7
 
-        initial_loss = net.train([0.5, 0.3], [0.8])
-
-        eval_loss = net.evaluate([0.5, 0.3], [0.8])
-        assert isinstance(eval_loss, float)
-        assert eval_loss >= 0.0
-
-        eval_loss2 = net.evaluate([0.5, 0.3], [0.8])
-        assert eval_loss == eval_loss2
-
-    def test_fann_double_evaluate(self):
-        """Test FannNetworkDouble.evaluate() computes loss without training."""
-        net = FannNetworkDouble([2, 4, 1])
-        net.learning_rate = 0.7
-
-        initial_loss = net.train([0.5, 0.3], [0.8])
+        net.train([0.5, 0.3], [0.8])
 
         eval_loss = net.evaluate([0.5, 0.3], [0.8])
         assert isinstance(eval_loss, float)
@@ -77,7 +63,7 @@ class TestEvaluateMethod:
         inputs = [0.5] * 16  # 4*4 = 16 inputs
         targets = [1.0, 0.0]
 
-        initial_loss = net.train(inputs, targets, learning_rate=0.01)
+        net.train(inputs, targets, learning_rate=0.01)
 
         eval_loss = net.evaluate(inputs, targets)
         assert isinstance(eval_loss, float)
@@ -151,32 +137,6 @@ class TestTrainBatchMethod:
     def test_fann_train_batch(self):
         """Test FannNetwork.train_batch() trains on multiple examples."""
         net = FannNetwork([2, 4, 1])
-        net.learning_rate = 0.7
-
-        inputs_list = [
-            [0.0, 0.0],
-            [0.0, 1.0],
-            [1.0, 0.0],
-            [1.0, 1.0]
-        ]
-        targets_list = [
-            [0.0],
-            [1.0],
-            [1.0],
-            [0.0]
-        ]
-
-        stats = net.train_batch(inputs_list, targets_list, shuffle=False)
-
-        assert 'mean_loss' in stats
-        assert 'total_loss' in stats
-        assert 'count' in stats
-        assert stats['count'] == 4
-        assert stats['mean_loss'] >= 0.0
-
-    def test_fann_double_train_batch(self):
-        """Test FannNetworkDouble.train_batch() trains on multiple examples."""
-        net = FannNetworkDouble([2, 4, 1])
         net.learning_rate = 0.7
 
         inputs_list = [
@@ -327,11 +287,6 @@ class TestBatchTrainingProgression:
             assert stats['mean_loss'] >= 0.0
             assert stats['total_loss'] >= 0.0
             assert stats['count'] == 4
-
-        # With 20 epochs and reasonable learning rate, loss should eventually decrease
-        # Check average of last 5 epochs vs first 5 epochs
-        avg_initial = sum(losses[:5]) / 5
-        avg_final = sum(losses[-5:]) / 5
 
         # This is a softer check - just verify training had some effect
         # (might increase or decrease, but should change from random init)

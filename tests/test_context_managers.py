@@ -8,7 +8,7 @@ protocol (__enter__/__exit__) and can be used with the 'with' statement.
 import pytest
 from cynn.tinn import TinnNetwork
 from cynn.genann import GenannNetwork
-from cynn.fann import FannNetwork, FannNetworkDouble
+from cynn.fann import FannNetwork
 from cynn.cnn import CNNNetwork
 
 
@@ -42,13 +42,13 @@ class TestTinnContextManager:
     def test_exception_propagation(self):
         """Test exceptions inside 'with' block are propagated."""
         with pytest.raises(ValueError, match="test error"):
-            with TinnNetwork(2, 4, 1) as net:
+            with TinnNetwork(2, 4, 1) as _net:
                 raise ValueError("test error")
 
     def test_network_usable_after_context(self):
         """Test network remains usable after exiting context."""
         with TinnNetwork(2, 4, 1) as net:
-            output1 = net.predict([0.5, 0.3])
+            net.predict([0.5, 0.3])
 
         # Network should still be usable
         output2 = net.predict([0.5, 0.3])
@@ -91,13 +91,13 @@ class TestGenannContextManager:
     def test_exception_propagation(self):
         """Test exceptions inside 'with' block are propagated."""
         with pytest.raises(ValueError, match="test error"):
-            with GenannNetwork(2, 1, 4, 1) as net:
+            with GenannNetwork(2, 1, 4, 1) as _net:
                 raise ValueError("test error")
 
     def test_network_usable_after_context(self):
         """Test network remains usable after exiting context."""
         with GenannNetwork(2, 1, 4, 1) as net:
-            output1 = net.predict([0.5, 0.3])
+            net.predict([0.5, 0.3])
 
         # Network should still be usable
         output2 = net.predict([0.5, 0.3])
@@ -140,13 +140,13 @@ class TestFannContextManager:
     def test_exception_propagation(self):
         """Test exceptions inside 'with' block are propagated."""
         with pytest.raises(ValueError, match="test error"):
-            with FannNetwork([2, 4, 1]) as net:
+            with FannNetwork([2, 4, 1]) as _net:
                 raise ValueError("test error")
 
     def test_network_usable_after_context(self):
         """Test network remains usable after exiting context."""
         with FannNetwork([2, 4, 1]) as net:
-            output1 = net.predict([0.5, 0.3])
+            net.predict([0.5, 0.3])
 
         # Network should still be usable
         output2 = net.predict([0.5, 0.3])
@@ -155,55 +155,6 @@ class TestFannContextManager:
     def test_training_in_context(self):
         """Test training works inside context manager."""
         with FannNetwork([2, 4, 1]) as net:
-            loss = net.train([0.0, 1.0], [1.0])
-            assert isinstance(loss, float)
-            assert loss >= 0.0
-
-
-class TestFannDoubleContextManager:
-    """Test context manager protocol for FannNetworkDouble."""
-
-    def test_with_statement(self):
-        """Test FannNetworkDouble can be used with 'with' statement."""
-        with FannNetworkDouble([2, 4, 1]) as net:
-            assert net is not None
-            assert net.input_size == 2
-            assert net.output_size == 1
-            output = net.predict([0.5, 0.3])
-            assert len(output) == 1
-
-    def test_enter_returns_self(self):
-        """Test __enter__ returns the network instance."""
-        net = FannNetworkDouble([2, 4, 1])
-        result = net.__enter__()
-        assert result is net
-        net.__exit__(None, None, None)
-
-    def test_exit_returns_false(self):
-        """Test __exit__ returns False to propagate exceptions."""
-        net = FannNetworkDouble([2, 4, 1])
-        net.__enter__()
-        result = net.__exit__(None, None, None)
-        assert result is False
-
-    def test_exception_propagation(self):
-        """Test exceptions inside 'with' block are propagated."""
-        with pytest.raises(ValueError, match="test error"):
-            with FannNetworkDouble([2, 4, 1]) as net:
-                raise ValueError("test error")
-
-    def test_network_usable_after_context(self):
-        """Test network remains usable after exiting context."""
-        with FannNetworkDouble([2, 4, 1]) as net:
-            output1 = net.predict([0.5, 0.3])
-
-        # Network should still be usable
-        output2 = net.predict([0.5, 0.3])
-        assert len(output2) == 1
-
-    def test_training_in_context(self):
-        """Test training works inside context manager."""
-        with FannNetworkDouble([2, 4, 1]) as net:
             loss = net.train([0.0, 1.0], [1.0])
             assert isinstance(loss, float)
             assert loss >= 0.0
@@ -238,7 +189,7 @@ class TestCNNContextManager:
     def test_exception_propagation(self):
         """Test exceptions inside 'with' block are propagated."""
         with pytest.raises(ValueError, match="test error"):
-            with CNNNetwork() as net:
+            with CNNNetwork() as _net:
                 raise ValueError("test error")
 
     def test_network_usable_after_context(self):
@@ -246,7 +197,7 @@ class TestCNNContextManager:
         with CNNNetwork() as net:
             net.create_input_layer(1, 4, 4)
             net.add_full_layer(2)
-            output1 = net.predict([0.5] * 16)
+            net.predict([0.5] * 16)
 
         # Network should still be usable
         output2 = net.predict([0.5] * 16)

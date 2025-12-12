@@ -51,7 +51,7 @@ add_custom_command(
     OUTPUT fann_module.c
     COMMAND Python::Interpreter -m cython
           "${CMAKE_CURRENT_SOURCE_DIR}/fann.pyx" --output-file fann_module.c
-    DEPENDS fann.pyx ffann.pxd dfann.pxd _common.pxi
+    DEPENDS fann.pyx ffann.pxd _common.pxi
 )
 
 python_add_library(fann_py MODULE fann_module.c WITH_SOABI)
@@ -61,7 +61,6 @@ set_target_properties(fann_py PROPERTIES OUTPUT_NAME "fann")
 target_link_libraries(fann_py
     PUBLIC
     floatfann
-    doublefann
 )
 
 target_include_directories(fann_py

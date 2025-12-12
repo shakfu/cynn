@@ -7,6 +7,40 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **External Sequence Dataset** - `tests/data/sequences.csv` with 15 mathematical integer sequences
+  - Patterns include: forward/reverse counting, Fibonacci mod 8, pi digits, triangular numbers, primes mod 8, Collatz sequence, popcount
+  - Used by `kann_lstm_sequence.py` for LSTM sequence prediction training
+  - Vocab size computed dynamically from data (currently 10)
+
+- **Comprehensive Example Scripts** - 9 documented examples in `tests/examples/` demonstrating all network types
+  - `tinn_xor.py` - TinnNetwork solving XOR problem
+  - `genann_iris.py` - GenannNetwork classifying Iris dataset
+  - `fann_regression.py` - FannNetwork for regression tasks
+  - `cnn_mnist.py` - CNNNetwork for image classification
+  - `kann_mlp_iris.py` - KannNeuralNetwork MLP for Iris classification
+  - `kann_lstm_sequence.py` - KannNeuralNetwork LSTM for sequence modeling
+  - `kann_gru_text.py` - KannNeuralNetwork GRU for text processing
+  - `kann_rnn_timeseries.py` - KannNeuralNetwork RNN for time series
+  - `kann_text_generation.py` - KannNeuralNetwork for text generation
+  - `run_all_examples.py` - Script to execute all examples with summary report
+  - `README.md` - Documentation for running and understanding examples
+
+### Changed
+
+- **kann_lstm_sequence.py** - Now loads sequences from external CSV file instead of inline data
+  - Added `--data-path` CLI argument to specify custom sequence file
+  - Falls back to inline generation if file not found
+  - Integrated with `run_all_examples.py` data file handling
+
+### Removed
+
+- **FannNetworkDouble class** - Removed due to C symbol conflicts and maintenance complexity
+  - Float64 users should use GenannNetwork instead (also float64 precision)
+  - Simplifies FANN integration by building only floatfann library
+  - Removed `dfann.pxd` declaration file
+
 ## [0.1.4]
 
 ### Changed
@@ -17,7 +51,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - **Import paths changed** - must now import from submodules:
     - `from cynn.tinn import TinnNetwork, seed`
     - `from cynn.genann import GenannNetwork`
-    - `from cynn.fann import FannNetwork, FannNetworkDouble`
+    - `from cynn.fann import FannNetwork`
     - `from cynn.cnn import CNNNetwork, CNNLayer`
     - `from cynn.kann import KannNeuralNetwork, GraphBuilder, ...`
   - `__init__.py` no longer exports anything - enables lazy loading (modules only loaded when imported)
@@ -114,18 +148,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Comprehensive tests in `tests/test_batch_training.py` (16 new tests)
 
 - **Loss Evaluation Without Training** - All network types now support validation without weight updates
-  - `evaluate(inputs, targets)` method for all networks (TinnNetwork, GenannNetwork, FannNetwork, FannNetworkDouble, CNNNetwork)
+  - `evaluate(inputs, targets)` method for all networks (TinnNetwork, GenannNetwork, FannNetwork, CNNNetwork)
   - Computes mean squared error without modifying network weights
   - Perfect for validation sets and monitoring generalization
   - GIL-free execution
   - Returns same loss type as `train()` (float32 or float64 depending on network)
 
 - **Context Manager Support** - All network types now implement Python's context manager protocol
-  - `__enter__()` and `__exit__()` methods for all networks (TinnNetwork, GenannNetwork, FannNetwork, FannNetworkDouble, CNNNetwork)
+  - `__enter__()` and `__exit__()` methods for all networks (TinnNetwork, GenannNetwork, FannNetwork, CNNNetwork)
   - Enables use of `with` statement for cleaner, more Pythonic code
   - Networks remain usable after exiting context
   - Automatic resource cleanup via existing `__dealloc__` methods
-  - Comprehensive tests in `tests/test_context_managers.py` (33 new tests)
+  - Comprehensive tests in `tests/test_context_managers.py`
   - Type stubs updated with context manager protocol
 
 ### Changed
@@ -133,7 +167,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Standardized Training Interface (BREAKING CHANGE)** - Consistent return values across all network types
   - `GenannNetwork.train()` now returns `float` (mean squared error) instead of `None`
   - `FannNetwork.train()` now returns `float` (mean squared error) instead of `None`
-  - `FannNetworkDouble.train()` now returns `float` (mean squared error) instead of `None`
   - `TinnNetwork.train()` and `CNNNetwork.train()` already returned loss (no change)
   - **Migration**: Code ignoring return values continues to work. Only code explicitly checking for `None` needs updating.
   - All `train()` methods now have consistent semantics: train on one example, return loss
@@ -192,13 +225,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Full buffer protocol support (lists, tuples, arrays, NumPy arrays)
   - GIL-free execution for parallel training and inference
   - Native FANN format save/load (text-based .fann files)
-- FannNetworkDouble class providing float64 precision alternative to FannNetwork
-  - Identical API to FannNetwork but uses double precision (float64)
-  - Better numerical stability for deep networks or long training sessions
-  - Compatible with NumPy's default float64 arrays without type conversion
-  - Same flexible architecture and sparse network support as FannNetwork
-  - All features from FannNetwork available in double precision
-- Comprehensive type stubs for CNNNetwork, CNNLayer, GenannNetwork, FannNetwork, and FannNetworkDouble in _core.pyi
+- Comprehensive type stubs for CNNNetwork, CNNLayer, GenannNetwork, and FannNetwork in _core.pyi
 - nn1, GENANN and FANN library integration in CMake build system
 - Created `cnn.pxd` for nn1 CNN C library declarations
 - API comparison documentation in README.md
@@ -210,10 +237,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Created `tinn.pxd` for Tinn C library declarations
   - Created `genann.pxd` for GENANN C library declarations
   - Created `ffann.pxd` for float32 FANN C library declarations
-  - Created `dfann.pxd` for float64 FANN C library declarations
   - Updated `_core.pyx` imports to use new modular declaration files
   - Improved code organization and reduced coupling between neural network backends
-- Updated README.md to document TinnNetwork, GenannNetwork, FannNetwork, and FannNetworkDouble
+- Updated README.md to document TinnNetwork, GenannNetwork, and FannNetwork
 - Project description now mentions Tinn, GENANN, and FANN libraries
 - Added "Choosing Between Network Implementations" section to README
 - Expanded feature comparison table with precision information

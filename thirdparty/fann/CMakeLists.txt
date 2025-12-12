@@ -1,4 +1,4 @@
-cmake_minimum_required (VERSION 3.5)
+cmake_minimum_required (VERSION 3.10)
 
 project (FANN C)
 
@@ -15,11 +15,10 @@ configure_file (cmake/config.h.in ${CMAKE_CURRENT_BINARY_DIR}/src/include/config
 add_definitions(-DDISABLE_PARALLEL_FANN)
 add_definitions(-D_REENTRANT)
 
-# Build static floatfann and doublefann libraries
+# Build static floatfann library
 include_directories(src/include ${CMAKE_CURRENT_BINARY_DIR}/src/include/)
 
 add_library(floatfann STATIC src/floatfann.c)
-add_library(doublefann STATIC src/doublefann.c dfann_wrapper.c)
 
 target_compile_options(floatfann
     PUBLIC
@@ -29,16 +28,6 @@ target_compile_options(floatfann
     -fPIC
 )
 
-target_compile_options(doublefann
-    PUBLIC
-    -Wall
-    -Wextra
-    -O3
-    -fPIC
-)
-
 if (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
     target_compile_options(floatfann PUBLIC -Wno-deprecated)
-    target_compile_options(doublefann PUBLIC -Wno-deprecated)
 endif()
-

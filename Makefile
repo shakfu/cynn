@@ -6,7 +6,7 @@ build:
 	@uv sync --reinstall-package cynn
 
 test:
-	@uv run pytest -v
+	@uv run pytest
 
 wheel:
 	@uv build

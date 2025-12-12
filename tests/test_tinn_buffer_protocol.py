@@ -1,6 +1,5 @@
 import pytest
 import array
-from cynn.tinn import TinnNetwork
 
 
 class TestBufferProtocol:

@@ -1,6 +1,5 @@
 import pytest
 import os
-from pathlib import Path
 from cynn.tinn import TinnNetwork
 
 
@@ -68,7 +67,6 @@ class TestSaveLoad:
 
         # Make predictions with loaded network (like test.c does)
         test_inputs = xor_data[0][0]
-        test_targets = xor_data[0][1]
 
         pred_original = xor_network.predict(test_inputs)
         pred_loaded = loaded.predict(test_inputs)

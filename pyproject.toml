@@ -4,7 +4,7 @@ version = "0.1.4"
 description = "Python bindings to four lightweight neural network libraries."
 readme = "README.md"
 authors = [
-    { name = "shakfu", email = "me@example.com" }
+    { name = "Shakeeb Alireza", email = "me@example.com" }
 ]
 requires-python = ">=3.12"
 dependencies = []

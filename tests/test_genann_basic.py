@@ -157,7 +157,7 @@ class TestAdditionalFeatures:
     def test_randomize(self):
         """Test randomize method."""
         net = GenannNetwork(2, 1, 3, 1)
-        pred_before = net.predict([0.5, 0.3])
+        net.predict([0.5, 0.3])
         net.randomize()
         pred_after = net.predict([0.5, 0.3])
         # After randomization, predictions should likely be different

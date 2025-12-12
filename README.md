@@ -41,7 +41,7 @@ The project uses Cython to create efficient Python bindings to these C implement
 | Image processing / CNNs | nn1, KANN | Convolutional layer support |
 | Sequence modeling (text, time series) | KANN | LSTM, GRU, RNN with BPTT |
 | Custom architectures | KANN | GraphBuilder API for computational graphs |
-| Numerical precision critical | Genann, FANN (Double), nn1 | Float64 precision |
+| Numerical precision critical | Genann, nn1 | Float64 precision |
 | Memory constrained | Tinn, FANN | Float32, minimal overhead |
 | Sparse/partially connected networks | FANN | Configurable connection rate |
 
@@ -51,17 +51,16 @@ The project uses Cython to create efficient Python bindings to these C implement
 |---------|--------------|-----------|--------------|
 | **Tinn** | Fixed 3-layer (in, hidden, out) | float32 | Simplicity |
 | **Genann** | Multi-layer MLP | float64 | Deep networks, precision |
-| **FANN** | Flexible MLP | float32/64 | Learning parameters, sparse networks |
+| **FANN** | Flexible MLP | float32 | Learning parameters, sparse networks |
 | **nn1** | CNN (conv + dense layers) | float64 | Image/spatial data |
 | **KANN** | MLP, CNN, LSTM, GRU, RNN | float32 | Recurrent networks, custom graphs |
 
 ## Features
 
-- **Six network implementations:**
+- **Five network implementations:**
   - `TinnNetwork`: Simple 3-layer architecture (input, hidden, output) using float32
   - `GenannNetwork`: Flexible multi-layer architecture with arbitrary depth using float64
   - `FannNetwork`: Flexible multi-layer architecture with settable learning parameters using float32
-  - `FannNetworkDouble`: Same as FannNetwork but with float64 precision
   - `CNNNetwork`: Layer-based convolutional neural network with input, conv, and fully-connected layers using float64
   - `KannNeuralNetwork` (KANN): Advanced neural networks including MLPs, LSTMs, GRUs, and RNNs using float32
 - Backpropagation training with configurable learning rate
@@ -559,6 +558,41 @@ loaded_net = TinnNetwork.load("model.tinn")
 prediction = loaded_net.predict([0.5, 0.3])
 ```
 
+## Examples
+
+The `tests/examples/` directory contains 9 documented examples demonstrating each network type with real tasks:
+
+| Example | Network | Task | Dataset |
+|---------|---------|------|---------|
+| `tinn_xor.py` | TinnNetwork | XOR classification | Inline |
+| `genann_iris.py` | GenannNetwork | Iris classification | `iris.csv` |
+| `fann_regression.py` | FannNetwork | Sine wave regression | `sine_wave.csv` |
+| `cnn_mnist.py` | CNNNetwork | Digit classification | `mnist_subset.csv` |
+| `kann_mlp_iris.py` | KannNeuralNetwork.mlp() | Iris classification | `iris.csv` |
+| `kann_lstm_sequence.py` | KannNeuralNetwork.lstm() | Sequence prediction | `sequences.csv` |
+| `kann_gru_text.py` | KannNeuralNetwork.gru() | Text modeling | `shakespeare_tiny.txt` |
+| `kann_rnn_timeseries.py` | KannNeuralNetwork.mlp() | Time series | `sine_wave.csv` |
+| `kann_text_generation.py` | KannNeuralNetwork.lstm() | Text generation | `shakespeare_tiny.txt` |
+
+```bash
+# Run any example
+uv run python tests/examples/tinn_xor.py
+
+# Run with options
+uv run python tests/examples/kann_lstm_sequence.py --epochs 100 --hidden-size 64
+
+# Run all examples with summary
+uv run python tests/examples/run_all_examples.py
+
+# Run at 50% training intensity (faster)
+uv run python tests/examples/run_all_examples.py --ratio 0.5
+
+# Run at 200% training intensity (slower)
+uv run python tests/examples/run_all_examples.py --ratio 2.0
+```
+
+Datasets are stored in `tests/data/`. See `tests/examples/README.md` for detailed documentation.
+
 ## Development
 
 ### Building
@@ -597,13 +631,12 @@ cynn/
 │       ├── _common.pxi       # Shared Cython code
 │       ├── tinn.pyx          # TinnNetwork wrapper
 │       ├── genann.pyx        # GenannNetwork wrapper
-│       ├── fann.pyx          # FannNetwork, FannNetworkDouble wrappers
+│       ├── fann.pyx          # FannNetwork wrapper
 │       ├── cnn.pyx           # CNNNetwork, CNNLayer wrappers
 │       ├── kann.pyx          # KannNeuralNetwork, GraphBuilder, etc.
 │       ├── tinn.pxd          # Tinn C declarations
 │       ├── genann.pxd        # Genann C declarations
-│       ├── ffann.pxd         # Float FANN C declarations
-│       ├── dfann.pxd         # Double FANN C declarations
+│       ├── ffann.pxd         # FANN C declarations
 │       ├── cnn.pxd           # nn1 CNN C declarations
 │       ├── kann.pxd          # KANN C declarations
 │       └── CMakeLists.txt    # Build configuration
@@ -930,44 +963,6 @@ def __exit__(self, exc_type, exc_val, exc_tb) -> bool
 ```
 
 Context manager protocol support. Enables use of `with` statement for cleaner code. The network handles cleanup automatically via `__dealloc__`, so context manager usage is optional.
-
-### FannNetworkDouble
-
-```python
-class FannNetworkDouble:
-    def __init__(self, layers: list[int] | None = None, connection_rate: float = 1.0)
-```
-
-Create a new multi-layer neural network (float64 precision) using the FANN library. FannNetworkDouble has the identical API to FannNetwork but uses double precision for better numerical stability.
-
-**Parameters:**
-
-- `layers`: List of layer sizes [input, hidden1, ..., hiddenN, output]. Must have at least 2 layers.
-- `connection_rate`: Connection density (0.0 to 1.0). 1.0 = fully connected, < 1.0 = sparse network.
-
-**Properties:**
-Same as FannNetwork: `input_size`, `output_size`, `total_neurons`, `total_connections`, `num_layers`, `layers`, `learning_rate`, `learning_momentum`
-
-**Methods:**
-Same as FannNetwork: `predict()`, `train()`, `evaluate()`, `train_batch()`, `randomize_weights()`, `copy()`, `save()`, `load()`, `__enter__()`, `__exit__()`
-
-**Example:**
-
-```python
-from cynn.fann import FannNetworkDouble
-import numpy as np
-
-# Create network with float64 precision
-net = FannNetworkDouble([2, 4, 3, 1])
-
-# Works seamlessly with NumPy's default float64
-inputs = np.array([0.5, 0.3])  # dtype=float64 by default
-targets = np.array([0.8])
-
-# Train and predict with higher precision
-net.train(inputs, targets)
-prediction = net.predict(inputs)
-```
 
 ### CNNNetwork
 
@@ -1390,19 +1385,19 @@ Prepare sequence data for RNN training.
 
 ## Choosing Between Network Implementations
 
-| Feature | TinnNetwork | GenannNetwork | FannNetwork | FannNetworkDouble | CNNNetwork | KannNeuralNetwork (KANN) |
-|---------|-------------|---------------|-------------|-------------------|------------|---------------------|
-| **Precision** | float32 | float64 | float32 | float64 | float64 | float32 |
-| **Architecture** | Fixed 3-layer | Multi-layer | Flexible | Flexible | Layer-based CNN | MLP/LSTM/GRU/RNN |
-| **Layer Spec** | (in, hid, out) | (in, nlayers, hid, out) | [in, h1, h2, out] | [in, h1, h2, out] | Build API | Factory methods |
-| **Learning Rate** | Per-train | Per-train | Settable property | Settable property | Per-train | Per-train |
-| **Momentum** | No | No | Yes | Yes | No | RMSprop built-in |
-| **Sparse Networks** | No | No | Yes | Yes | No | No |
-| **Convolutional** | No | No | No | No | Yes | Yes (via GraphBuilder) |
-| **Recurrent (RNN)** | No | No | No | No | No | Yes (LSTM/GRU/RNN) |
-| **Returns Loss** | Yes | Yes | Yes | Yes | Yes | Yes |
-| **Memory** | Low | Medium | Low | Medium | High | Medium |
-| **NumPy Default** | Converts | Native | Converts | Native | Native | Converts |
+| Feature | TinnNetwork | GenannNetwork | FannNetwork | CNNNetwork | KannNeuralNetwork (KANN) |
+|---------|-------------|---------------|-------------|------------|---------------------|
+| **Precision** | float32 | float64 | float32 | float64 | float32 |
+| **Architecture** | Fixed 3-layer | Multi-layer | Flexible | Layer-based CNN | MLP/LSTM/GRU/RNN |
+| **Layer Spec** | (in, hid, out) | (in, nlayers, hid, out) | [in, h1, h2, out] | Build API | Factory methods |
+| **Learning Rate** | Per-train | Per-train | Settable property | Per-train | Per-train |
+| **Momentum** | No | No | Yes | No | RMSprop built-in |
+| **Sparse Networks** | No | No | Yes | No | No |
+| **Convolutional** | No | No | No | Yes | Yes (via GraphBuilder) |
+| **Recurrent (RNN)** | No | No | No | No | Yes (LSTM/GRU/RNN) |
+| **Returns Loss** | Yes | Yes | Yes | Yes | Yes |
+| **Memory** | Low | Medium | Low | High | Medium |
+| **NumPy Default** | Converts | Native | Converts | Native | Converts |
 
 **Use TinnNetwork when:**
 
@@ -1428,15 +1423,6 @@ Prepare sequence data for RNN training.
 - You prefer list-based layer specification: `FannNetwork([2, 4, 3, 1])`
 - You want settable learning parameters
 - Memory efficiency is important (float32 uses less memory than float64)
-
-**Use FannNetworkDouble when:**
-
-- You need everything FannNetwork offers but with higher precision
-- Numerical stability is critical (deep networks, long training sessions)
-- You're working primarily with NumPy arrays (which default to float64)
-- You need to minimize accumulation of floating-point errors
-- You're comparing results with other float64-based implementations
-- The extra memory cost (2x per weight) is acceptable
 
 **Use CNNNetwork when:**
 

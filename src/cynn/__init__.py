@@ -3,7 +3,7 @@
 # Import directly from submodules:
 #   from cynn.tinn import TinnNetwork, seed
 #   from cynn.genann import GenannNetwork
-#   from cynn.fann import FannNetwork, FannNetworkDouble
+#   from cynn.fann import FannNetwork
 #   from cynn.cnn import CNNNetwork, CNNLayer
 #   from cynn.kann import KannNeuralNetwork, GraphBuilder, ...
 

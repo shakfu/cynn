@@ -199,7 +199,7 @@ class TestAdditionalFeatures:
     def test_randomize_weights(self):
         """Test randomize_weights method."""
         net = FannNetwork([2, 3, 1])
-        pred_before = net.predict([0.5, 0.3])
+        net.predict([0.5, 0.3])
         net.randomize_weights(-0.5, 0.5)
         pred_after = net.predict([0.5, 0.3])
         # After randomization, predictions should likely be different

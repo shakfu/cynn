@@ -9,7 +9,6 @@ from cynn.kann import (
     KannNeuralNetwork,
     GraphBuilder,
     Array2D,
-    KannError,
     KannModelError,
     COST_MSE,
     COST_MULTI_CROSS_ENTROPY,

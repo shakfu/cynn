@@ -1,4 +1,3 @@
-import pytest
 import random
 from cynn.tinn import TinnNetwork
 
