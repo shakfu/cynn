@@ -1,6 +1,6 @@
 import pytest
 import random
-from cynn import GenannNetwork
+from cynn.genann import GenannNetwork
 
 
 class TestXORTraining:

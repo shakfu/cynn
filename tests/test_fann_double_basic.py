@@ -1,6 +1,6 @@
 import pytest
 import array
-from cynn import FannNetworkDouble
+from cynn.fann import FannNetworkDouble
 
 
 class TestNetworkCreation:

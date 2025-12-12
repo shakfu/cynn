@@ -6,7 +6,10 @@ protocol (__enter__/__exit__) and can be used with the 'with' statement.
 """
 
 import pytest
-from cynn import TinnNetwork, GenannNetwork, FannNetwork, FannNetworkDouble, CNNNetwork
+from cynn.tinn import TinnNetwork
+from cynn.genann import GenannNetwork
+from cynn.fann import FannNetwork, FannNetworkDouble
+from cynn.cnn import CNNNetwork
 
 
 class TestTinnContextManager:

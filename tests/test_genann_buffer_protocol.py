@@ -1,6 +1,6 @@
 import pytest
 import array
-from cynn import GenannNetwork
+from cynn.genann import GenannNetwork
 
 
 class TestBufferProtocol:

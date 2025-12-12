@@ -5,8 +5,8 @@ import array
 import tempfile
 from pathlib import Path
 
-from cynn import (
-    NeuralNetwork,
+from cynn.kann import (
+    KannNeuralNetwork,
     GraphBuilder,
     Array2D,
     KannError,
@@ -18,7 +18,7 @@ from cynn import (
     KANN_FLAG_OUT,
     RNN_NORM,
     RNN_VAR_H0,
-    kann_set_seed,
+    set_seed as kann_set_seed,
 )
 
 
@@ -27,7 +27,7 @@ class TestMLPCreation:
 
     def test_create_simple_mlp(self):
         """Test creating a basic MLP."""
-        net = NeuralNetwork.mlp(
+        net = KannNeuralNetwork.mlp(
             input_size=4,
             hidden_sizes=[8],
             output_size=2
@@ -39,7 +39,7 @@ class TestMLPCreation:
 
     def test_create_deep_mlp(self):
         """Test creating an MLP with multiple hidden layers."""
-        net = NeuralNetwork.mlp(
+        net = KannNeuralNetwork.mlp(
             input_size=10,
             hidden_sizes=[32, 16, 8],
             output_size=3
@@ -50,7 +50,7 @@ class TestMLPCreation:
 
     def test_create_mlp_with_dropout(self):
         """Test creating an MLP with dropout."""
-        net = NeuralNetwork.mlp(
+        net = KannNeuralNetwork.mlp(
             input_size=4,
             hidden_sizes=[8, 4],
             output_size=2,
@@ -61,7 +61,7 @@ class TestMLPCreation:
 
     def test_create_mlp_with_mse_cost(self):
         """Test creating an MLP with MSE cost function."""
-        net = NeuralNetwork.mlp(
+        net = KannNeuralNetwork.mlp(
             input_size=4,
             hidden_sizes=[8],
             output_size=1,
@@ -71,7 +71,7 @@ class TestMLPCreation:
 
     def test_create_mlp_with_binary_cross_entropy(self):
         """Test creating an MLP with binary cross-entropy cost."""
-        net = NeuralNetwork.mlp(
+        net = KannNeuralNetwork.mlp(
             input_size=4,
             hidden_sizes=[8],
             output_size=1,
@@ -85,7 +85,7 @@ class TestRNNCreation:
 
     def test_create_lstm(self):
         """Test creating an LSTM network."""
-        net = NeuralNetwork.lstm(
+        net = KannNeuralNetwork.lstm(
             input_size=10,
             hidden_size=32,
             output_size=10
@@ -96,7 +96,7 @@ class TestRNNCreation:
 
     def test_create_gru(self):
         """Test creating a GRU network."""
-        net = NeuralNetwork.gru(
+        net = KannNeuralNetwork.gru(
             input_size=10,
             hidden_size=32,
             output_size=10
@@ -106,7 +106,7 @@ class TestRNNCreation:
 
     def test_create_simple_rnn(self):
         """Test creating a simple RNN network."""
-        net = NeuralNetwork.rnn(
+        net = KannNeuralNetwork.rnn(
             input_size=10,
             hidden_size=32,
             output_size=10
@@ -115,7 +115,7 @@ class TestRNNCreation:
 
     def test_create_lstm_with_flags(self):
         """Test creating LSTM with RNN flags."""
-        net = NeuralNetwork.lstm(
+        net = KannNeuralNetwork.lstm(
             input_size=10,
             hidden_size=32,
             output_size=10,
@@ -129,18 +129,18 @@ class TestNetworkProperties:
 
     def test_n_nodes(self):
         """Test accessing number of nodes."""
-        net = NeuralNetwork.mlp(4, [8], 2)
+        net = KannNeuralNetwork.mlp(4, [8], 2)
         assert net.n_nodes > 0
 
     def test_n_var(self):
         """Test accessing number of trainable variables."""
-        net = NeuralNetwork.mlp(4, [8], 2)
+        net = KannNeuralNetwork.mlp(4, [8], 2)
         # Should have weights and biases
         assert net.n_var > 0
 
     def test_n_const(self):
         """Test accessing number of constants."""
-        net = NeuralNetwork.mlp(4, [8], 2)
+        net = KannNeuralNetwork.mlp(4, [8], 2)
         # n_const should be >= 0
         assert net.n_const >= 0
 
@@ -151,7 +151,7 @@ class TestInference:
     def test_apply_with_array(self):
         """Test inference with array.array input."""
         kann_set_seed(42)
-        net = NeuralNetwork.mlp(4, [8], 3)
+        net = KannNeuralNetwork.mlp(4, [8], 3)
         inputs = array.array('f', [0.1, 0.2, 0.3, 0.4])
         output = net.apply(inputs)
         assert len(output) == 3
@@ -164,7 +164,7 @@ class TestInference:
         import numpy as np
 
         kann_set_seed(42)
-        net = NeuralNetwork.mlp(4, [8], 3)
+        net = KannNeuralNetwork.mlp(4, [8], 3)
         inputs = np.array([0.1, 0.2, 0.3, 0.4], dtype=np.float32)
         output = net.apply(inputs)
         assert len(output) == 3
@@ -172,7 +172,7 @@ class TestInference:
     def test_apply_deterministic(self):
         """Test that inference is deterministic."""
         kann_set_seed(42)
-        net = NeuralNetwork.mlp(4, [8], 3)
+        net = KannNeuralNetwork.mlp(4, [8], 3)
         inputs = array.array('f', [0.1, 0.2, 0.3, 0.4])
 
         # Switch to inference mode
@@ -190,19 +190,19 @@ class TestSaveLoad:
 
     def test_save_creates_file(self, temp_model_path):
         """Test that save creates a file."""
-        net = NeuralNetwork.mlp(4, [8], 2)
+        net = KannNeuralNetwork.mlp(4, [8], 2)
         net.save(str(temp_model_path))
         assert temp_model_path.exists()
 
     def test_load_restores_network(self, temp_model_path):
         """Test that load restores a working network."""
         kann_set_seed(42)
-        net = NeuralNetwork.mlp(4, [8], 2)
+        net = KannNeuralNetwork.mlp(4, [8], 2)
         inputs = array.array('f', [0.1, 0.2, 0.3, 0.4])
         original_output = net.apply(inputs)
 
         net.save(str(temp_model_path))
-        loaded = NeuralNetwork.load(str(temp_model_path))
+        loaded = KannNeuralNetwork.load(str(temp_model_path))
 
         loaded_output = loaded.apply(inputs)
         for i in range(len(original_output)):
@@ -211,7 +211,7 @@ class TestSaveLoad:
     def test_load_nonexistent_file(self):
         """Test loading from nonexistent file raises error."""
         with pytest.raises(KannModelError):
-            NeuralNetwork.load("/nonexistent/path/model.kann")
+            KannNeuralNetwork.load("/nonexistent/path/model.kann")
 
 
 class TestClone:
@@ -220,7 +220,7 @@ class TestClone:
     def test_clone_creates_copy(self):
         """Test that clone creates a working copy."""
         kann_set_seed(42)
-        net = NeuralNetwork.mlp(4, [8], 2)
+        net = KannNeuralNetwork.mlp(4, [8], 2)
         cloned = net.clone()
 
         inputs = array.array('f', [0.1, 0.2, 0.3, 0.4])
@@ -236,14 +236,14 @@ class TestContextManager:
 
     def test_with_statement(self):
         """Test network in with statement."""
-        with NeuralNetwork.mlp(4, [8], 2) as net:
+        with KannNeuralNetwork.mlp(4, [8], 2) as net:
             inputs = array.array('f', [0.1, 0.2, 0.3, 0.4])
             output = net.apply(inputs)
             assert len(output) == 2
 
     def test_close_explicit(self):
         """Test explicit close."""
-        net = NeuralNetwork.mlp(4, [8], 2)
+        net = KannNeuralNetwork.mlp(4, [8], 2)
         net.close()
         # After close, operations should fail
         with pytest.raises(KannModelError):

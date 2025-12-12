@@ -1,6 +1,6 @@
 import pytest
 import random
-from cynn import TinnNetwork
+from cynn.tinn import TinnNetwork
 
 
 class TestXORTraining:

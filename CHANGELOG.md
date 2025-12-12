@@ -7,9 +7,34 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.4]
+
+### Changed
+
+- **Modular Package Structure (BREAKING CHANGE)** - Split monolithic `_core.pyx` into separate modules per library
+  - Each network type now has its own `.pyx` file: `tinn.pyx`, `genann.pyx`, `fann.pyx`, `cnn.pyx`, `kann.pyx`
+  - Shared code extracted to `_common.pxi` (seed function, path handling utilities)
+  - **Import paths changed** - must now import from submodules:
+    - `from cynn.tinn import TinnNetwork, seed`
+    - `from cynn.genann import GenannNetwork`
+    - `from cynn.fann import FannNetwork, FannNetworkDouble`
+    - `from cynn.cnn import CNNNetwork, CNNLayer`
+    - `from cynn.kann import KannNeuralNetwork, GraphBuilder, ...`
+  - `__init__.py` no longer exports anything - enables lazy loading (modules only loaded when imported)
+  - Benefits: faster startup, reduced memory when using only one network type, cleaner separation
+
+- **Renamed `NeuralNetwork` to `KannNeuralNetwork`** - More explicit naming to distinguish from other network types
+  - All factory methods now use `KannNeuralNetwork.mlp()`, `KannNeuralNetwork.lstm()`, etc.
+  - This is a **breaking change** for code using the KANN neural network class
+
+- **KannNeuralNetwork path handling** - `save()` and `load()` methods now accept `str`, `bytes`, or `os.PathLike`
+  - Consistent with other network types (TinnNetwork, GenannNetwork, etc.)
+  - `DataSet.load()` also updated for consistency
+
 ## [0.1.3]
 
 ### Added
+
 - **KANN Neural Network Library Integration** - Advanced neural networks with LSTM, GRU, and RNN support
   - `NeuralNetwork` class with factory methods for creating MLPs, LSTMs, GRUs, and simple RNNs
   - `NeuralNetwork.mlp()`: Create multi-layer perceptrons with arbitrary hidden layer configuration
@@ -73,11 +98,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added "Use NeuralNetwork (KANN) when" guidance section
 
 ### Fixed
+
 - Fixed Cython compilation error where `kann.pxd` was not found by adding `-I` include path to CMake build
 
 ## [0.1.2]
 
 ### Added
+
 - **Batch Training Support** - All network types now support efficient batch training
   - `train_batch(inputs_list, targets_list, [rate], shuffle=False)` method for all networks
   - Returns dict with `'mean_loss'`, `'total_loss'`, and `'count'` statistics
@@ -102,6 +129,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Type stubs updated with context manager protocol
 
 ### Changed
+
 - **Standardized Training Interface (BREAKING CHANGE)** - Consistent return values across all network types
   - `GenannNetwork.train()` now returns `float` (mean squared error) instead of `None`
   - `FannNetwork.train()` now returns `float` (mean squared error) instead of `None`
@@ -124,11 +152,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Tests cover evaluate(), train_batch(), context managers, shuffling, edge cases, and consistency
 
 ### Fixed
+
 - Removed non-existent `square` function from `__init__.py` exports
 
 ## [0.1.1]
 
 ### Added
+
 - CNNNetwork class wrapping the nn1 Convolutional Neural Network C library
   - Layer-based architecture with support for input, convolutional, and fully-connected layers
   - Flexible network building API with `create_input_layer()`, `add_conv_layer()`, `add_full_layer()`
@@ -174,6 +204,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - API comparison documentation in README.md
 
 ### Changed
+
 - Refactored Cython declarations for better modularity and maintainability
   - Split monolithic `nnet.pxd` into library-specific declaration files
   - Created `tinn.pxd` for Tinn C library declarations
@@ -190,6 +221,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.1.0]
 
 ### Added
+
 - Initial release
 - TinnNetwork class wrapping the Tinn C library
 - Basic 3-layer neural network (input, hidden, output)

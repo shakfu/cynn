@@ -1,6 +1,6 @@
 import pytest
 import array
-from cynn import FannNetwork
+from cynn.fann import FannNetwork
 
 
 class TestBufferProtocol:

@@ -1,5 +1,5 @@
 import pytest
-from cynn import GenannNetwork
+from cynn.genann import GenannNetwork
 
 
 class TestNetworkCreation:

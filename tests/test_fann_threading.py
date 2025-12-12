@@ -2,7 +2,7 @@ import pytest
 import threading
 import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
-from cynn import FannNetwork
+from cynn.fann import FannNetwork
 
 
 class TestNoGilThreading:

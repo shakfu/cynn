@@ -4,15 +4,15 @@ import pytest
 import array
 import random
 
-from cynn import (
+from cynn.kann import (
     one_hot_encode,
     one_hot_encode_2d,
     softmax_sample,
     prepare_sequence_data,
     list_to_2d_array,
     Array2D,
-    kann_set_seed,
-    kann_set_verbose,
+    set_seed as kann_set_seed,
+    set_verbose as kann_set_verbose,
 )
 
 
@@ -269,10 +269,10 @@ class TestArray2DMemoryview:
     def test_memoryview_usable_with_kann(self):
         """Test that numpy arrays work with KANN functions."""
         np = pytest.importorskip("numpy")
-        from cynn import NeuralNetwork, COST_MSE, kann_set_seed
+        from cynn.kann import KannNeuralNetwork, COST_MSE, set_seed as kann_set_seed
 
         kann_set_seed(42)
-        net = NeuralNetwork.mlp(2, [4], 1, cost_type=COST_MSE)
+        net = KannNeuralNetwork.mlp(2, [4], 1, cost_type=COST_MSE)
 
         # Use numpy arrays which provide proper 2D memoryviews
         x = np.array([[0.0, 0.0], [1.0, 1.0]], dtype=np.float32)
@@ -288,15 +288,15 @@ class TestKannSetSeed:
 
     def test_reproducibility(self):
         """Test that setting seed produces reproducible results."""
-        from cynn import NeuralNetwork
+        from cynn.kann import KannNeuralNetwork
 
         kann_set_seed(12345)
-        net1 = NeuralNetwork.mlp(4, [8], 2)
+        net1 = KannNeuralNetwork.mlp(4, [8], 2)
         inputs = array.array('f', [0.1, 0.2, 0.3, 0.4])
         out1 = net1.apply(inputs)
 
         kann_set_seed(12345)
-        net2 = NeuralNetwork.mlp(4, [8], 2)
+        net2 = KannNeuralNetwork.mlp(4, [8], 2)
         out2 = net2.apply(inputs)
 
         # Outputs should be identical with same seed

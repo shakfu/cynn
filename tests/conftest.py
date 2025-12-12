@@ -7,14 +7,14 @@ from pathlib import Path
 @pytest.fixture
 def simple_network():
     """Create a small network for basic testing."""
-    from cynn import TinnNetwork
+    from cynn.tinn import TinnNetwork
     return TinnNetwork(2, 3, 1)
 
 
 @pytest.fixture
 def xor_network():
     """Create a network suitable for XOR problem."""
-    from cynn import TinnNetwork
+    from cynn.tinn import TinnNetwork
     return TinnNetwork(2, 4, 1)
 
 

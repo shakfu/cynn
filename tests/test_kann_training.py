@@ -6,12 +6,12 @@ import random
 
 np = pytest.importorskip("numpy")
 
-from cynn import (
-    NeuralNetwork,
+from cynn.kann import (
+    KannNeuralNetwork,
     Array2D,
     COST_MSE,
     COST_MULTI_CROSS_ENTROPY,
-    kann_set_seed,
+    set_seed as kann_set_seed,
 )
 
 
@@ -23,7 +23,7 @@ class TestMLPTraining:
         kann_set_seed(42)
         random.seed(42)
 
-        net = NeuralNetwork.mlp(2, [8], 2, cost_type=COST_MULTI_CROSS_ENTROPY)
+        net = KannNeuralNetwork.mlp(2, [8], 2, cost_type=COST_MULTI_CROSS_ENTROPY)
 
         # XOR-like problem
         x = np.array([
@@ -60,7 +60,7 @@ class TestMLPTraining:
         """Test training with numpy arrays."""
         kann_set_seed(42)
 
-        net = NeuralNetwork.mlp(2, [8], 1, cost_type=COST_MSE)
+        net = KannNeuralNetwork.mlp(2, [8], 1, cost_type=COST_MSE)
 
         # Simple regression: y = x1 + x2
         x = np.array([
@@ -87,7 +87,7 @@ class TestMLPTraining:
         """Test that train returns number of epochs."""
         kann_set_seed(42)
 
-        net = NeuralNetwork.mlp(2, [4], 2)
+        net = KannNeuralNetwork.mlp(2, [4], 2)
         x = np.array([[0.0, 0.0], [1.0, 1.0]], dtype=np.float32)
         y = np.array([[1.0, 0.0], [0.0, 1.0]], dtype=np.float32)
 
@@ -105,7 +105,7 @@ class TestMLPTraining:
         """Test training with validation split."""
         kann_set_seed(42)
 
-        net = NeuralNetwork.mlp(2, [8], 2)
+        net = KannNeuralNetwork.mlp(2, [8], 2)
 
         # Need enough samples for validation split
         x_data = [[float(i % 2), float(i // 2 % 2)] for i in range(20)]
@@ -126,7 +126,7 @@ class TestMLPTraining:
         """Test single epoch training."""
         kann_set_seed(42)
 
-        net = NeuralNetwork.mlp(2, [4], 2)
+        net = KannNeuralNetwork.mlp(2, [4], 2)
         x = np.array([[0.0, 0.0], [1.0, 1.0], [0.0, 1.0], [1.0, 0.0]], dtype=np.float32)
         y = np.array([[1.0, 0.0], [1.0, 0.0], [0.0, 1.0], [0.0, 1.0]], dtype=np.float32)
 
@@ -149,7 +149,7 @@ class TestCostComputation:
         """Test that cost is positive."""
         kann_set_seed(42)
 
-        net = NeuralNetwork.mlp(2, [4], 2)
+        net = KannNeuralNetwork.mlp(2, [4], 2)
         x = np.array([[0.0, 0.0], [1.0, 1.0]], dtype=np.float32)
         y = np.array([[1.0, 0.0], [0.0, 1.0]], dtype=np.float32)
 
@@ -160,7 +160,7 @@ class TestCostComputation:
         """Test that cost decreases after training."""
         kann_set_seed(42)
 
-        net = NeuralNetwork.mlp(2, [8], 2)
+        net = KannNeuralNetwork.mlp(2, [8], 2)
         x = np.array([[0.0, 0.0], [1.0, 1.0], [0.0, 1.0], [1.0, 0.0]], dtype=np.float32)
         y = np.array([[1.0, 0.0], [1.0, 0.0], [0.0, 1.0], [0.0, 1.0]], dtype=np.float32)
 
@@ -182,13 +182,13 @@ class TestRNNTraining:
 
     def test_lstm_can_unroll(self):
         """Test that LSTM can be unrolled."""
-        net = NeuralNetwork.lstm(10, 16, 10)
+        net = KannNeuralNetwork.lstm(10, 16, 10)
         unrolled = net.unroll(5)
         assert unrolled is not None
 
     def test_gru_can_unroll(self):
         """Test that GRU can be unrolled."""
-        net = NeuralNetwork.gru(10, 16, 10)
+        net = KannNeuralNetwork.gru(10, 16, 10)
         unrolled = net.unroll(5)
         assert unrolled is not None
 
@@ -197,7 +197,7 @@ class TestRNNTraining:
         kann_set_seed(42)
         random.seed(42)
 
-        net = NeuralNetwork.lstm(8, 16, 8)
+        net = KannNeuralNetwork.lstm(8, 16, 8)
 
         # Create simple repeating sequences
         sequences = [
@@ -223,7 +223,7 @@ class TestRNNTraining:
         kann_set_seed(42)
         random.seed(42)
 
-        net = NeuralNetwork.lstm(8, 32, 8)
+        net = KannNeuralNetwork.lstm(8, 32, 8)
 
         # Simple pattern sequences
         sequences = [
@@ -250,13 +250,13 @@ class TestSwitchMode:
 
     def test_switch_to_training_mode(self):
         """Test switching to training mode."""
-        net = NeuralNetwork.mlp(4, [8], 2, dropout=0.5)
+        net = KannNeuralNetwork.mlp(4, [8], 2, dropout=0.5)
         net.switch_mode(True)  # training mode
         # Should not raise
 
     def test_switch_to_inference_mode(self):
         """Test switching to inference mode."""
-        net = NeuralNetwork.mlp(4, [8], 2, dropout=0.5)
+        net = KannNeuralNetwork.mlp(4, [8], 2, dropout=0.5)
         net.switch_mode(False)  # inference mode
         # Should not raise
 
@@ -264,7 +264,7 @@ class TestSwitchMode:
         """Test that dropout behaves differently in training vs inference."""
         kann_set_seed(42)
 
-        net = NeuralNetwork.mlp(4, [8], 2, dropout=0.5)
+        net = KannNeuralNetwork.mlp(4, [8], 2, dropout=0.5)
         inputs = array.array('f', [0.1, 0.2, 0.3, 0.4])
 
         # Inference mode - should be deterministic
@@ -282,12 +282,12 @@ class TestBatchSize:
 
     def test_set_batch_size(self):
         """Test setting batch size."""
-        net = NeuralNetwork.mlp(4, [8], 2)
+        net = KannNeuralNetwork.mlp(4, [8], 2)
         net.set_batch_size(32)
         # Should not raise
 
     def test_clone_with_batch_size(self):
         """Test cloning with different batch size."""
-        net = NeuralNetwork.mlp(4, [8], 2)
+        net = KannNeuralNetwork.mlp(4, [8], 2)
         cloned = net.clone(batch_size=16)
         assert cloned is not None

@@ -16,7 +16,7 @@ from libc.string cimport memcpy, memset
 
 from kann cimport *
 
-import array
+include "_common.pxi"
 
 # ============================================================================
 # Constants - Exposed to Python
@@ -145,7 +145,7 @@ cdef class KadNode:
 # Neural Network Class
 # ============================================================================
 
-cdef class NeuralNetwork:
+cdef class KannNeuralNetwork:
     """
     High-level wrapper for KANN neural networks.
 
@@ -155,7 +155,7 @@ cdef class NeuralNetwork:
     Example usage for MIDI generation:
 
         # Create a simple MLP for note prediction
-        nn = NeuralNetwork.mlp(
+        nn = KannNeuralNetwork.mlp(
             input_size=128,   # e.g., one-hot encoded note
             hidden_sizes=[256, 128],
             output_size=128,
@@ -204,9 +204,9 @@ cdef class NeuralNetwork:
             self._ann = NULL
 
     @staticmethod
-    cdef NeuralNetwork _wrap(kann_t* ann, bint is_unrolled=False):
+    cdef KannNeuralNetwork _wrap(kann_t* ann, bint is_unrolled=False):
         """Wrap an existing KANN network."""
-        cdef NeuralNetwork wrapper = NeuralNetwork.__new__(NeuralNetwork)
+        cdef KannNeuralNetwork wrapper = KannNeuralNetwork.__new__(KannNeuralNetwork)
         wrapper._ann = ann
         wrapper._is_unrolled = is_unrolled
         if ann != NULL:
@@ -228,7 +228,7 @@ cdef class NeuralNetwork:
             dropout: Dropout rate (0.0 = no dropout)
 
         Returns:
-            NeuralNetwork instance
+            KannNeuralNetwork instance
         """
         cdef kad_node_t* t
         cdef kann_t* ann
@@ -261,7 +261,7 @@ cdef class NeuralNetwork:
         if ann == NULL:
             raise KannModelError("Failed to create neural network")
 
-        return NeuralNetwork._wrap(ann)
+        return KannNeuralNetwork._wrap(ann)
 
     @staticmethod
     def lstm(int input_size, int hidden_size, int output_size,
@@ -277,7 +277,7 @@ cdef class NeuralNetwork:
             rnn_flags: RNN configuration flags
 
         Returns:
-            NeuralNetwork instance
+            KannNeuralNetwork instance
         """
         cdef kad_node_t* t
         cdef kann_t* ann
@@ -298,7 +298,7 @@ cdef class NeuralNetwork:
         if ann == NULL:
             raise KannModelError("Failed to create neural network")
 
-        return NeuralNetwork._wrap(ann)
+        return KannNeuralNetwork._wrap(ann)
 
     @staticmethod
     def gru(int input_size, int hidden_size, int output_size,
@@ -314,7 +314,7 @@ cdef class NeuralNetwork:
             rnn_flags: RNN configuration flags
 
         Returns:
-            NeuralNetwork instance
+            KannNeuralNetwork instance
         """
         cdef kad_node_t* t
         cdef kann_t* ann
@@ -335,7 +335,7 @@ cdef class NeuralNetwork:
         if ann == NULL:
             raise KannModelError("Failed to create neural network")
 
-        return NeuralNetwork._wrap(ann)
+        return KannNeuralNetwork._wrap(ann)
 
     @staticmethod
     def rnn(int input_size, int hidden_size, int output_size,
@@ -351,7 +351,7 @@ cdef class NeuralNetwork:
             rnn_flags: RNN configuration flags
 
         Returns:
-            NeuralNetwork instance
+            KannNeuralNetwork instance
         """
         cdef kad_node_t* t
         cdef kann_t* ann
@@ -372,38 +372,37 @@ cdef class NeuralNetwork:
         if ann == NULL:
             raise KannModelError("Failed to create neural network")
 
-        return NeuralNetwork._wrap(ann)
+        return KannNeuralNetwork._wrap(ann)
 
     @staticmethod
-    def load(str filename):
+    def load(path):
         """
         Load a network from file.
 
         Args:
-            filename: Path to model file
+            path: Path to model file (str, bytes, or os.PathLike)
 
         Returns:
-            NeuralNetwork instance
+            KannNeuralNetwork instance
         """
-        import os
-        if not os.path.exists(filename):
-            raise KannModelError(f"Model file not found: {filename}")
-        cdef bytes fn_bytes = filename.encode('utf-8')
+        cdef bytes fn_bytes = _as_bytes_path(path)
+        if not os.path.exists(fn_bytes):
+            raise KannModelError(f"Model file not found: {path}")
         cdef kann_t* ann = kann_load(fn_bytes)
         if ann == NULL:
-            raise KannModelError(f"Failed to load model from {filename}")
-        return NeuralNetwork._wrap(ann)
+            raise KannModelError(f"Failed to load model from {path}")
+        return KannNeuralNetwork._wrap(ann)
 
-    def save(self, str filename):
+    def save(self, path):
         """
         Save the network to file.
 
         Args:
-            filename: Path to save model
+            path: Path to save model (str, bytes, or os.PathLike)
         """
         if self._ann == NULL:
             raise KannModelError("No network to save")
-        cdef bytes fn_bytes = filename.encode('utf-8')
+        cdef bytes fn_bytes = _as_bytes_path(path)
         kann_save(fn_bytes, self._ann)
 
     @property
@@ -997,14 +996,14 @@ cdef class NeuralNetwork:
             batch_size: New batch size
 
         Returns:
-            New NeuralNetwork instance
+            New KannNeuralNetwork instance
         """
         if self._ann == NULL:
             raise KannModelError("No network to clone")
         cdef kann_t* cloned = kann_clone(self._ann, batch_size)
         if cloned == NULL:
             raise KannModelError("Failed to clone network")
-        return NeuralNetwork._wrap(cloned)
+        return KannNeuralNetwork._wrap(cloned)
 
     def unroll(self, int length):
         """
@@ -1014,7 +1013,7 @@ cdef class NeuralNetwork:
             length: Number of time steps to unroll
 
         Returns:
-            New unrolled NeuralNetwork instance
+            New unrolled KannNeuralNetwork instance
         """
         if self._ann == NULL:
             raise KannModelError("No network to unroll")
@@ -1032,7 +1031,7 @@ cdef class NeuralNetwork:
 
         if unrolled == NULL:
             raise KannModelError("Failed to unroll network (is it an RNN?)")
-        return NeuralNetwork._wrap(unrolled, is_unrolled=True)
+        return KannNeuralNetwork._wrap(unrolled, is_unrolled=True)
 
     def rnn_start(self):
         """Start RNN continuous feeding mode."""
@@ -1504,12 +1503,12 @@ cdef class GraphBuilder:
             cost: The cost/loss node
 
         Returns:
-            NeuralNetwork instance
+            KannNeuralNetwork instance
         """
         cdef kann_t* ann = kann_new(cost._node, 0)
         if ann == NULL:
             raise KannModelError("Failed to build neural network")
-        return NeuralNetwork._wrap(ann)
+        return KannNeuralNetwork._wrap(ann)
 
 
 # ============================================================================
@@ -1575,12 +1574,12 @@ cdef class DataSet:
             self._owned = False
 
     @staticmethod
-    def load(str filename):
+    def load(path):
         """
         Load tabular data from a TSV file.
 
         Args:
-            filename: Path to TSV file
+            path: Path to TSV file (str, bytes, or os.PathLike)
 
         Returns:
             DataSet instance
@@ -1588,14 +1587,13 @@ cdef class DataSet:
         Raises:
             KannError: If file cannot be loaded
         """
-        import os
-        if not os.path.exists(filename):
-            raise KannError(f"Data file not found: {filename}")
+        cdef bytes fn_bytes = _as_bytes_path(path)
+        if not os.path.exists(fn_bytes):
+            raise KannError(f"Data file not found: {path}")
 
-        cdef bytes fn_bytes = filename.encode('utf-8')
         cdef kann_data_t* data = kann_data_read(fn_bytes)
         if data == NULL:
-            raise KannError(f"Failed to load data from {filename}")
+            raise KannError(f"Failed to load data from {path}")
 
         cdef DataSet ds = DataSet.__new__(DataSet)
         ds._data = data

@@ -1,6 +1,6 @@
 [project]
 name = "cynn"
-version = "0.1.2"
+version = "0.1.4"
 description = "Python bindings to four lightweight neural network libraries."
 readme = "README.md"
 authors = [
@@ -27,7 +27,7 @@ wheel.py-api = "cp312"
 # Files to exclude from the SDist even if they are included by default. Supports gitignore syntax.
 # sdist.exclude = []
 # A set of patterns to exclude from the wheel.
-wheel.exclude = ["*.pxd", "*.pyx"]
+wheel.exclude = ["*.pxd", "*.pyx", "*.pxi"]
 # Whether to strip the binaries.
 # install.strip = true
 # The CMake build directory. Defaults to a unique temporary directory.

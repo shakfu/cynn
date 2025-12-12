@@ -1,5 +1,5 @@
 import pytest
-from cynn import TinnNetwork
+from cynn.tinn import TinnNetwork
 
 
 class TestNetworkCreation:

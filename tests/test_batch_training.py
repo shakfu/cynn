@@ -1,7 +1,10 @@
 """Comprehensive tests for evaluate() and train_batch() methods across all network types."""
 
 import pytest
-from cynn import TinnNetwork, GenannNetwork, FannNetwork, FannNetworkDouble, CNNNetwork
+from cynn.tinn import TinnNetwork
+from cynn.genann import GenannNetwork
+from cynn.fann import FannNetwork, FannNetworkDouble
+from cynn.cnn import CNNNetwork
 
 
 class TestEvaluateMethod:

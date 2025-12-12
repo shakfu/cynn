@@ -1,6 +1,6 @@
 import pytest
 import random
-from cynn import FannNetwork
+from cynn.fann import FannNetwork
 
 
 class TestXORTraining:

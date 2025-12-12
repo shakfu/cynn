@@ -1,7 +1,7 @@
 import pytest
 import tempfile
 from pathlib import Path
-from cynn import FannNetwork
+from cynn.fann import FannNetwork
 
 
 class TestSaveLoad:

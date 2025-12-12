@@ -1,7 +1,7 @@
 import pytest
 import tempfile
 from pathlib import Path
-from cynn import GenannNetwork
+from cynn.genann import GenannNetwork
 
 
 class TestSaveLoad:

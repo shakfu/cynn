@@ -1,7 +1,7 @@
 import pytest
 import os
 from pathlib import Path
-from cynn import TinnNetwork
+from cynn.tinn import TinnNetwork
 
 
 class TestSaveLoad:

@@ -1,17 +1,59 @@
 # cynn
 
-A Cython wrapper for minimal, dependency-free neural network libraries in C.
+cynn is a thin Cython wrapper around minimal, dependency-free neural network libraries written in C, providing a zero-dependency Python library for learning about neural networks and for embedding lightweight models in applications where large machine-learning frameworks are impractical or unnecessary.
 
 ## Overview
 
-cynn provides Python bindings to four lightweight neural network libraries:
-- [Tinn](https://github.com/glouw/tinn) - A tiny 3-layer neural network library.
-- [GENANN](https://github.com/codeplea/genann) - A minimal multi-layer neural network library.
-- [FANN](https://github.com/libfann/fann) - Fast Artificial Neural Network library.
-- [nn1](https://github.com/euske/nn1) - Convolutional Neural Network library.
-- [kann](https://github.com/attractivechaos/kann) - Multi-layer perceptrons, convolutional neural networks and recurrent neural networks (including LSTM and GRU).
+cynn provides Python bindings to five lightweight neural network libraries:
 
-The project uses Cython to create efficient Python wrappers around the C implementations, allowing you to train and use neural networks with minimal overhead.
+- [Tinn](https://github.com/glouw/tinn) – A tiny 3-layer neural network library.
+- [GENANN](https://github.com/codeplea/genann) – A minimal multi-layer neural network library.
+- [FANN](https://github.com/libfann/fann) – Fast Artificial Neural Network library.
+- [nn1](https://github.com/euske/nn1) – Convolutional Neural Network library.
+- [kann](https://github.com/attractivechaos/kann) – Multi-layer perceptrons, convolutional neural networks, and recurrent neural networks (including LSTM and GRU).
+
+The project uses Cython to create efficient Python bindings to these C implementations, enabling training and inference with minimal overhead and no heavyweight dependencies.
+
+## When to Use cynn
+
+- **Learning neural network fundamentals** - Simple C implementations make it easier to understand what's happening compared to opaque framework internals
+- **Embedded/resource-constrained environments** - No required dependencies beyond Python and a C compiler (NumPy is optional)
+- **Simple prediction tasks** - Small classifiers, basic regression, sequence modeling where a full ML stack is overkill
+- **Minimal footprint applications** - Ship trained models without pulling in hundreds of MB of dependencies
+- **Parallel inference workloads** - GIL-free execution enables true multithreading for batch predictions
+
+## When NOT to Use cynn
+
+- **Production ML at scale** - Use PyTorch, TensorFlow, or JAX for GPU acceleration and ecosystem support
+- **Large datasets** - No GPU parallelism; training is CPU-bound
+- **Complex architectures** - Transformers, attention mechanisms, and modern architectures aren't available
+- **Pre-trained models** - No ecosystem of pre-trained weights or model hubs
+- **Research requiring flexibility** - Framework autograd is far more flexible for novel architectures
+
+## Choosing a Network
+
+| Use Case | Recommended | Why |
+|----------|-------------|-----|
+| Learning basics | Tinn | Simplest API, single hidden layer, easy to understand |
+| Simple classification/regression | Tinn, Genann | Lightweight, fast training |
+| Deep feedforward networks | Genann, FANN | Multiple hidden layers, flexible architecture |
+| Need momentum/learning rate tuning | FANN | Settable learning parameters |
+| Image processing / CNNs | nn1, KANN | Convolutional layer support |
+| Sequence modeling (text, time series) | KANN | LSTM, GRU, RNN with BPTT |
+| Custom architectures | KANN | GraphBuilder API for computational graphs |
+| Numerical precision critical | Genann, FANN (Double), nn1 | Float64 precision |
+| Memory constrained | Tinn, FANN | Float32, minimal overhead |
+| Sparse/partially connected networks | FANN | Configurable connection rate |
+
+### Library Comparison
+
+| Library | Architecture | Precision | Key Strength |
+|---------|--------------|-----------|--------------|
+| **Tinn** | Fixed 3-layer (in, hidden, out) | float32 | Simplicity |
+| **Genann** | Multi-layer MLP | float64 | Deep networks, precision |
+| **FANN** | Flexible MLP | float32/64 | Learning parameters, sparse networks |
+| **nn1** | CNN (conv + dense layers) | float64 | Image/spatial data |
+| **KANN** | MLP, CNN, LSTM, GRU, RNN | float32 | Recurrent networks, custom graphs |
 
 ## Features
 
@@ -21,7 +63,7 @@ The project uses Cython to create efficient Python wrappers around the C impleme
   - `FannNetwork`: Flexible multi-layer architecture with settable learning parameters using float32
   - `FannNetworkDouble`: Same as FannNetwork but with float64 precision
   - `CNNNetwork`: Layer-based convolutional neural network with input, conv, and fully-connected layers using float64
-  - `NeuralNetwork` (KANN): Advanced neural networks including MLPs, LSTMs, GRUs, and RNNs using float32
+  - `KannNeuralNetwork` (KANN): Advanced neural networks including MLPs, LSTMs, GRUs, and RNNs using float32
 - Backpropagation training with configurable learning rate
 - Save/load trained models to disk
 - Buffer protocol support - works with lists, tuples, array.array, NumPy arrays, etc.
@@ -57,7 +99,7 @@ uv sync
 ### Basic Example - TinnNetwork
 
 ```python
-from cynn import TinnNetwork
+from cynn.tinn import TinnNetwork
 
 # Create a network: 2 inputs, 4 hidden neurons, 1 output
 net = TinnNetwork(2, 4, 1)
@@ -77,7 +119,7 @@ print(f"Loss: {loss}")
 ### Basic Example - GenannNetwork
 
 ```python
-from cynn import GenannNetwork
+from cynn.genann import GenannNetwork
 
 # Create a network: 2 inputs, 2 hidden layers with 4 neurons each, 1 output
 net = GenannNetwork(2, 2, 4, 1)
@@ -107,7 +149,7 @@ net.randomize()
 ### Basic Example - CNNNetwork
 
 ```python
-from cynn import CNNNetwork
+from cynn.cnn import CNNNetwork
 
 # Create a convolutional neural network
 net = CNNNetwork()
@@ -142,7 +184,7 @@ for layer in net.layers:
 ### Basic Example - FannNetwork
 
 ```python
-from cynn import FannNetwork
+from cynn.fann import FannNetwork
 
 # Create a network: [2 inputs, 4 hidden layer 1, 3 hidden layer 2, 1 output]
 net = FannNetwork([2, 4, 3, 1])
@@ -176,14 +218,14 @@ net_copy = net.copy()
 net.randomize_weights(-0.5, 0.5)
 ```
 
-### Basic Example - NeuralNetwork (KANN)
+### Basic Example - KannNeuralNetwork (KANN)
 
 ```python
-from cynn import NeuralNetwork, COST_MSE, COST_MULTI_CROSS_ENTROPY
+from cynn.kann import KannNeuralNetwork, COST_MSE, COST_MULTI_CROSS_ENTROPY
 import array
 
 # Create a multi-layer perceptron
-net = NeuralNetwork.mlp(
+net = KannNeuralNetwork.mlp(
     input_size=4,
     hidden_sizes=[16, 8],  # Two hidden layers
     output_size=3,
@@ -217,16 +259,16 @@ print(f"Prediction: {list(output)}")
 
 # Save and load models
 net.save("model.kann")
-loaded = NeuralNetwork.load("model.kann")
+loaded = KannNeuralNetwork.load("model.kann")
 ```
 
 ### KANN - LSTM for Sequence Modeling
 
 ```python
-from cynn import NeuralNetwork, COST_MULTI_CROSS_ENTROPY
+from cynn.kann import KannNeuralNetwork, COST_MULTI_CROSS_ENTROPY
 
 # Create an LSTM network for sequence modeling
-lstm = NeuralNetwork.lstm(
+lstm = KannNeuralNetwork.lstm(
     input_size=128,    # Vocabulary size (one-hot)
     hidden_size=256,   # LSTM hidden state size
     output_size=128,   # Output vocabulary size
@@ -256,7 +298,7 @@ print(f"Final loss: {history['loss'][-1]}")
 ### KANN - Custom Network with GraphBuilder
 
 ```python
-from cynn import GraphBuilder
+from cynn.kann import GraphBuilder
 
 # Build a custom architecture
 builder = GraphBuilder()
@@ -282,7 +324,7 @@ print(f"Variables: {net.n_var}")
 All network types support batch training for improved efficiency:
 
 ```python
-from cynn import GenannNetwork
+from cynn.genann import GenannNetwork
 
 net = GenannNetwork(2, 1, 4, 1)
 
@@ -319,7 +361,7 @@ for epoch in range(100):
 Use `evaluate()` to compute loss without updating weights (useful for validation):
 
 ```python
-from cynn import TinnNetwork
+from cynn.tinn import TinnNetwork
 
 net = TinnNetwork(2, 4, 1)
 
@@ -349,7 +391,7 @@ assert val_loss == val_loss2  # Should be identical
 Combine batch training with evaluation for train/validation splits:
 
 ```python
-from cynn import FannNetwork
+from cynn.fann import FannNetwork
 
 net = FannNetwork([2, 8, 1])
 net.learning_rate = 0.5
@@ -378,7 +420,7 @@ for epoch in range(50):
 All network types support Python's context manager protocol (`with` statement) for cleaner code:
 
 ```python
-from cynn import TinnNetwork, GenannNetwork, CNNNetwork
+from cynn.tinn import TinnNetwork, GenannNetwork, CNNNetwork
 
 # Automatic resource management with context manager
 with TinnNetwork(2, 4, 1) as net:
@@ -409,7 +451,7 @@ Note: The context manager protocol ensures clean resource handling, but cynn net
 ### XOR Problem
 
 ```python
-from cynn import TinnNetwork, seed
+from cynn.tinn import TinnNetwork, seed
 import random
 import time
 
@@ -467,14 +509,13 @@ Epoch 2500: avg error = 0.004388
 ✓ [1.0, 1.0] -> 0.0721 (expected 0.0)
 ```
 
-
 ### NumPy Support
 
 The library supports any object implementing the buffer protocol, including NumPy arrays:
 
 ```python
 import numpy as np
-from cynn import TinnNetwork
+from cynn.tinn import TinnNetwork
 
 # Create network
 net = TinnNetwork(2, 4, 1)
@@ -502,7 +543,7 @@ predictions = [net.predict(row) for row in batch]
 ### Save and Load Models
 
 ```python
-from cynn import TinnNetwork
+from cynn.tinn import TinnNetwork
 
 # Train a network
 net = TinnNetwork(2, 4, 1)
@@ -548,25 +589,28 @@ uv run pytest tests/test_basic.py -v
 
 ### Project Structure
 
-```
+```text
 cynn/
 ├── src/
 │   └── cynn/
-│       ├── __init__.py       # Public API
-│       ├── _core.pyx         # Cython implementation (Tinn, Genann, FANN, nn1)
-│       ├── _core.pyi         # Type stubs
-│       ├── kann.pyx          # KANN Cython implementation
-│       ├── kann.pxd          # KANN C library declarations
-│       ├── cnn.pxd           # CNN declarations
-│       ├── dfann.pxd         # Double Fann declarations
-│       ├── ffann.pxd         # Float Fann declarations
-│       ├── genann.pxd        # Genann declarations
-│       ├── tinn.pxd          # Tinn declarations
+│       ├── __init__.py       # Package entry (lazy imports)
+│       ├── _common.pxi       # Shared Cython code
+│       ├── tinn.pyx          # TinnNetwork wrapper
+│       ├── genann.pyx        # GenannNetwork wrapper
+│       ├── fann.pyx          # FannNetwork, FannNetworkDouble wrappers
+│       ├── cnn.pyx           # CNNNetwork, CNNLayer wrappers
+│       ├── kann.pyx          # KannNeuralNetwork, GraphBuilder, etc.
+│       ├── tinn.pxd          # Tinn C declarations
+│       ├── genann.pxd        # Genann C declarations
+│       ├── ffann.pxd         # Float FANN C declarations
+│       ├── dfann.pxd         # Double FANN C declarations
+│       ├── cnn.pxd           # nn1 CNN C declarations
+│       ├── kann.pxd          # KANN C declarations
 │       └── CMakeLists.txt    # Build configuration
 ├── thirdparty/
 │   ├── tinn/                 # Vendored Tinn C library
 │   ├── genann/               # Vendored Genann C library
-│   ├── fann/                 # Vendored Fann C library
+│   ├── fann/                 # Vendored FANN C library
 │   ├── nn1/                  # Vendored nn1 CNN C library
 │   └── kann/                 # Vendored KANN C library
 ├── tests/                    # pytest test suite
@@ -595,11 +639,13 @@ class TinnNetwork:
 Create a new 3-layer neural network (float32 precision).
 
 **Parameters:**
+
 - `inputs`: Number of input neurons
 - `hidden`: Number of hidden layer neurons
 - `outputs`: Number of output neurons
 
 **Properties:**
+
 - `input_size`: Number of inputs
 - `hidden_size`: Number of hidden neurons
 - `output_size`: Number of outputs
@@ -608,24 +654,31 @@ Create a new 3-layer neural network (float32 precision).
 **Methods:**
 
 #### predict()
+
 ```python
 def predict(self, inputs: list[float]) -> list[float]
 ```
+
 Make a prediction given input values.
 
 #### train()
+
 ```python
 def train(self, inputs: list[float], targets: list[float], rate: float) -> float
 ```
+
 Train the network on one example. Returns the mean squared error for this training step.
 
 #### evaluate()
+
 ```python
 def evaluate(self, inputs: list[float], targets: list[float]) -> float
 ```
+
 Compute loss without training. Returns mean squared error between prediction and targets.
 
 #### train_batch()
+
 ```python
 def train_batch(
     self,
@@ -635,26 +688,33 @@ def train_batch(
     shuffle: bool = False
 ) -> dict[str, float]
 ```
+
 Train on multiple examples in batch. Returns dict with keys: `'mean_loss'`, `'total_loss'`, `'count'`.
 
 #### save()
+
 ```python
 def save(self, path: str | bytes | os.PathLike) -> None
 ```
+
 Save the network weights to a file.
 
 #### load()
+
 ```python
 @classmethod
 def load(cls, path: str | bytes | os.PathLike) -> TinnNetwork
 ```
+
 Load a network from a file.
 
 #### \_\_enter\_\_() / \_\_exit\_\_()
+
 ```python
 def __enter__(self) -> TinnNetwork
 def __exit__(self, exc_type, exc_val, exc_tb) -> bool
 ```
+
 Context manager protocol support. Enables use of `with` statement for cleaner code. The network handles cleanup automatically via `__dealloc__`, so context manager usage is optional.
 
 ### GenannNetwork
@@ -667,12 +727,14 @@ class GenannNetwork:
 Create a new multi-layer neural network (float64 precision).
 
 **Parameters:**
+
 - `inputs`: Number of input neurons
 - `hidden_layers`: Number of hidden layers
 - `hidden`: Number of neurons per hidden layer
 - `outputs`: Number of output neurons
 
 **Properties:**
+
 - `input_size`: Number of inputs
 - `hidden_layers`: Number of hidden layers
 - `hidden_size`: Number of neurons per hidden layer
@@ -684,24 +746,31 @@ Create a new multi-layer neural network (float64 precision).
 **Methods:**
 
 #### predict()
+
 ```python
 def predict(self, inputs: list[float]) -> list[float]
 ```
+
 Make a prediction given input values.
 
 #### train()
+
 ```python
 def train(self, inputs: list[float], targets: list[float], rate: float) -> float
 ```
+
 Train the network on one example using backpropagation. Returns mean squared error.
 
 #### evaluate()
+
 ```python
 def evaluate(self, inputs: list[float], targets: list[float]) -> float
 ```
+
 Compute loss without training. Returns mean squared error between prediction and targets.
 
 #### train_batch()
+
 ```python
 def train_batch(
     self,
@@ -711,38 +780,49 @@ def train_batch(
     shuffle: bool = False
 ) -> dict[str, float]
 ```
+
 Train on multiple examples in batch. Returns dict with keys: `'mean_loss'`, `'total_loss'`, `'count'`.
 
 #### randomize()
+
 ```python
 def randomize(self) -> None
 ```
+
 Randomize all network weights.
 
 #### copy()
+
 ```python
 def copy(self) -> GenannNetwork
 ```
+
 Create a deep copy of the network.
 
 #### save()
+
 ```python
 def save(self, path: str | bytes | os.PathLike) -> None
 ```
+
 Save the network weights to a file.
 
 #### load()
+
 ```python
 @classmethod
 def load(cls, path: str | bytes | os.PathLike) -> GenannNetwork
 ```
+
 Load a network from a file.
 
 #### \_\_enter\_\_() / \_\_exit\_\_()
+
 ```python
 def __enter__(self) -> GenannNetwork
 def __exit__(self, exc_type, exc_val, exc_tb) -> bool
 ```
+
 Context manager protocol support. Enables use of `with` statement for cleaner code. The network handles cleanup automatically via `__dealloc__`, so context manager usage is optional.
 
 ### FannNetwork
@@ -755,10 +835,12 @@ class FannNetwork:
 Create a new multi-layer neural network (float32 precision) using the FANN library.
 
 **Parameters:**
+
 - `layers`: List of layer sizes [input, hidden1, ..., hiddenN, output]. Must have at least 2 layers.
 - `connection_rate`: Connection density (0.0 to 1.0). 1.0 = fully connected, < 1.0 = sparse network.
 
 **Properties:**
+
 - `input_size`: Number of inputs
 - `output_size`: Number of outputs
 - `total_neurons`: Total number of neurons
@@ -771,24 +853,31 @@ Create a new multi-layer neural network (float32 precision) using the FANN libra
 **Methods:**
 
 #### predict()
+
 ```python
 def predict(self, inputs: list[float]) -> list[float]
 ```
+
 Make a prediction given input values.
 
 #### train()
+
 ```python
 def train(self, inputs: list[float], targets: list[float]) -> float
 ```
+
 Train the network on one example using backpropagation. Uses current `learning_rate` and `learning_momentum`. Returns mean squared error.
 
 #### evaluate()
+
 ```python
 def evaluate(self, inputs: list[float], targets: list[float]) -> float
 ```
+
 Compute loss without training. Returns mean squared error between prediction and targets.
 
 #### train_batch()
+
 ```python
 def train_batch(
     self,
@@ -797,38 +886,49 @@ def train_batch(
     shuffle: bool = False
 ) -> dict[str, float]
 ```
+
 Train on multiple examples in batch. Uses current `learning_rate` and `learning_momentum`. Returns dict with keys: `'mean_loss'`, `'total_loss'`, `'count'`.
 
 #### randomize_weights()
+
 ```python
 def randomize_weights(self, min_weight: float = -0.1, max_weight: float = 0.1) -> None
 ```
+
 Randomize all network weights to values in [min_weight, max_weight].
 
 #### copy()
+
 ```python
 def copy(self) -> FannNetwork
 ```
+
 Create a deep copy of the network.
 
 #### save()
+
 ```python
 def save(self, path: str | bytes | os.PathLike) -> None
 ```
+
 Save the network to a file (FANN text format).
 
 #### load()
+
 ```python
 @classmethod
 def load(cls, path: str | bytes | os.PathLike) -> FannNetwork
 ```
+
 Load a network from a file.
 
 #### \_\_enter\_\_() / \_\_exit\_\_()
+
 ```python
 def __enter__(self) -> FannNetwork
 def __exit__(self, exc_type, exc_val, exc_tb) -> bool
 ```
+
 Context manager protocol support. Enables use of `with` statement for cleaner code. The network handles cleanup automatically via `__dealloc__`, so context manager usage is optional.
 
 ### FannNetworkDouble
@@ -841,6 +941,7 @@ class FannNetworkDouble:
 Create a new multi-layer neural network (float64 precision) using the FANN library. FannNetworkDouble has the identical API to FannNetwork but uses double precision for better numerical stability.
 
 **Parameters:**
+
 - `layers`: List of layer sizes [input, hidden1, ..., hiddenN, output]. Must have at least 2 layers.
 - `connection_rate`: Connection density (0.0 to 1.0). 1.0 = fully connected, < 1.0 = sparse network.
 
@@ -851,8 +952,9 @@ Same as FannNetwork: `input_size`, `output_size`, `total_neurons`, `total_connec
 Same as FannNetwork: `predict()`, `train()`, `evaluate()`, `train_batch()`, `randomize_weights()`, `copy()`, `save()`, `load()`, `__enter__()`, `__exit__()`
 
 **Example:**
+
 ```python
-from cynn import FannNetworkDouble
+from cynn.fann import FannNetworkDouble
 import numpy as np
 
 # Create network with float64 precision
@@ -877,6 +979,7 @@ class CNNNetwork:
 Create a new convolutional neural network (float64 precision). Networks are built by adding layers sequentially.
 
 **Properties:**
+
 - `input_shape`: Tuple of (depth, width, height) for the input layer
 - `output_size`: Number of output nodes in the final layer
 - `num_layers`: Total number of layers in the network
@@ -885,12 +988,15 @@ Create a new convolutional neural network (float64 precision). Networks are buil
 **Methods:**
 
 #### create_input_layer()
+
 ```python
 def create_input_layer(self, depth: int, width: int, height: int) -> CNNLayer
 ```
+
 Create an input layer. Must be called first when building a network.
 
 #### add_conv_layer()
+
 ```python
 def add_conv_layer(
     self,
@@ -903,21 +1009,27 @@ def add_conv_layer(
     std: float = 0.1
 ) -> CNNLayer
 ```
+
 Add a convolutional layer with specified output dimensions and convolution parameters.
 
 #### add_full_layer()
+
 ```python
 def add_full_layer(self, num_nodes: int, std: float = 0.1) -> CNNLayer
 ```
+
 Add a fully-connected layer.
 
 #### predict()
+
 ```python
 def predict(self, inputs: list[float]) -> list[float]
 ```
+
 Make a prediction. Input should be a flat array of size depth × width × height.
 
 #### train()
+
 ```python
 def train(
     self,
@@ -926,15 +1038,19 @@ def train(
     learning_rate: float
 ) -> float
 ```
+
 Train the network on one example. Returns mean squared error.
 
 #### evaluate()
+
 ```python
 def evaluate(self, inputs: list[float], targets: list[float]) -> float
 ```
+
 Compute loss without training. Returns mean squared error between prediction and targets.
 
 #### train_batch()
+
 ```python
 def train_batch(
     self,
@@ -944,19 +1060,24 @@ def train_batch(
     shuffle: bool = False
 ) -> dict[str, float]
 ```
+
 Train on multiple examples in batch. Returns dict with keys: `'mean_loss'`, `'total_loss'`, `'count'`.
 
 #### dump()
+
 ```python
 def dump(self) -> None
 ```
+
 Print debug information about all layers to stdout.
 
 #### \_\_enter\_\_() / \_\_exit\_\_()
+
 ```python
 def __enter__(self) -> CNNNetwork
 def __exit__(self, exc_type, exc_val, exc_tb) -> bool
 ```
+
 Context manager protocol support. Enables use of `with` statement for cleaner code. The network handles cleanup automatically via `__dealloc__`, so context manager usage is optional.
 
 ### CNNLayer
@@ -968,6 +1089,7 @@ class CNNLayer
 Represents a single layer in a CNN. Created by CNNNetwork methods, not directly instantiated.
 
 **Properties:**
+
 - `layer_id`: Layer ID in the network
 - `shape`: Tuple of (depth, width, height)
 - `depth`, `width`, `height`: Individual dimensions
@@ -979,15 +1101,17 @@ Represents a single layer in a CNN. Created by CNNNetwork methods, not directly 
 **Methods:**
 
 #### get_outputs()
+
 ```python
 def get_outputs(self) -> list[float]
 ```
+
 Get the output values of this layer.
 
-### NeuralNetwork (KANN)
+### KannNeuralNetwork (KANN)
 
 ```python
-class NeuralNetwork
+class KannNeuralNetwork
 ```
 
 Advanced neural network class supporting MLPs, LSTMs, GRUs, and simple RNNs (float32 precision). Based on the KANN (Klib Artificial Neural Network) library.
@@ -995,6 +1119,7 @@ Advanced neural network class supporting MLPs, LSTMs, GRUs, and simple RNNs (flo
 **Factory Methods:**
 
 #### mlp()
+
 ```python
 @staticmethod
 def mlp(
@@ -1003,11 +1128,13 @@ def mlp(
     output_size: int,
     cost_type: int = COST_MULTI_CROSS_ENTROPY,
     dropout: float = 0.0
-) -> NeuralNetwork
+) -> KannNeuralNetwork
 ```
+
 Create a multi-layer perceptron with arbitrary hidden layer configuration.
 
 #### lstm()
+
 ```python
 @staticmethod
 def lstm(
@@ -1016,11 +1143,13 @@ def lstm(
     output_size: int,
     cost_type: int = COST_MULTI_CROSS_ENTROPY,
     rnn_flags: int = 0
-) -> NeuralNetwork
+) -> KannNeuralNetwork
 ```
+
 Create an LSTM network for sequence modeling.
 
 #### gru()
+
 ```python
 @staticmethod
 def gru(
@@ -1029,11 +1158,13 @@ def gru(
     output_size: int,
     cost_type: int = COST_MULTI_CROSS_ENTROPY,
     rnn_flags: int = 0
-) -> NeuralNetwork
+) -> KannNeuralNetwork
 ```
+
 Create a GRU network for sequence modeling.
 
 #### rnn()
+
 ```python
 @staticmethod
 def rnn(
@@ -1042,18 +1173,22 @@ def rnn(
     output_size: int,
     cost_type: int = COST_MULTI_CROSS_ENTROPY,
     rnn_flags: int = 0
-) -> NeuralNetwork
+) -> KannNeuralNetwork
 ```
+
 Create a simple RNN network.
 
 #### load()
+
 ```python
 @staticmethod
-def load(filename: str) -> NeuralNetwork
+def load(filename: str) -> KannNeuralNetwork
 ```
+
 Load a network from a file.
 
 **Properties:**
+
 - `n_nodes`: Number of nodes in the computational graph
 - `input_dim`: Input dimension
 - `output_dim`: Output dimension
@@ -1063,6 +1198,7 @@ Load a network from a file.
 **Methods:**
 
 #### train()
+
 ```python
 def train(
     self,
@@ -1076,9 +1212,11 @@ def train(
     validation_fraction: float = 0.1
 ) -> int
 ```
+
 Train the network using built-in feedforward trainer with RMSprop optimizer and early stopping. Returns number of epochs trained.
 
 #### train_rnn()
+
 ```python
 def train_rnn(
     self,
@@ -1093,51 +1231,67 @@ def train_rnn(
     verbose: int = 1
 ) -> dict
 ```
+
 Train RNN/LSTM/GRU using backpropagation through time (BPTT). Returns dict with `'loss'` and `'val_loss'` history lists.
 
 #### apply()
+
 ```python
 def apply(self, x: float[:]) -> array.array
 ```
+
 Apply the network to a single input. Returns output as `array.array('f', ...)`.
 
 #### cost()
+
 ```python
 def cost(self, x: float[:, :], y: float[:, :]) -> float
 ```
+
 Compute the cost over a dataset.
 
 #### save()
+
 ```python
 def save(self, filename: str) -> None
 ```
+
 Save the network to a file.
 
 #### clone()
+
 ```python
-def clone(self, batch_size: int = 1) -> NeuralNetwork
+def clone(self, batch_size: int = 1) -> KannNeuralNetwork
 ```
+
 Clone the network with a different batch size.
 
 #### unroll()
+
 ```python
-def unroll(self, length: int) -> NeuralNetwork
+def unroll(self, length: int) -> KannNeuralNetwork
 ```
+
 Unroll an RNN for a specified number of time steps.
 
 #### switch_mode()
+
 ```python
 def switch_mode(self, is_training: bool) -> None
 ```
+
 Switch between training and inference mode.
 
 #### close()
+
 ```python
 def close(self) -> None
 ```
+
 Explicitly release resources.
 
 #### \_\_enter\_\_() / \_\_exit\_\_()
+
 Context manager protocol support.
 
 ### GraphBuilder
@@ -1149,6 +1303,7 @@ class GraphBuilder
 Low-level graph builder for creating custom network architectures.
 
 **Methods:**
+
 - `input(size)`: Create an input layer
 - `dense(inp, output_size)`: Create a dense (fully connected) layer
 - `dropout(inp, rate)`: Create a dropout layer
@@ -1172,6 +1327,7 @@ class DataSet
 Wrapper for loading tabular data from TSV files.
 
 **Methods:**
+
 - `load(filename)`: Load data from a TSV file
 - `get_row(index)`: Get a single row of data
 - `get_row_name(index)`, `get_col_name(index)`: Get row/column names
@@ -1179,6 +1335,7 @@ Wrapper for loading tabular data from TSV files.
 - `to_2d_array()`: Convert to Array2D
 
 **Properties:**
+
 - `n_rows`, `n_cols`, `n_groups`, `shape`, `row_names`, `col_names`
 
 ### KANN Helper Functions
@@ -1186,46 +1343,54 @@ Wrapper for loading tabular data from TSV files.
 ```python
 kann_set_seed(seed: int) -> None
 ```
+
 Set the random seed for reproducibility.
 
 ```python
 kann_set_verbose(level: int) -> None
 ```
+
 Set verbosity level for KANN operations.
 
 ```python
 one_hot_encode(values: int[:], num_classes: int) -> list
 ```
+
 One-hot encode an array of integer values.
 
 ```python
 softmax_sample(probs: float[:], temperature: float = 1.0) -> int
 ```
+
 Sample from a probability distribution with temperature scaling.
 
 ```python
 prepare_sequence_data(sequences, seq_length: int, vocab_size: int) -> tuple
 ```
+
 Prepare sequence data for RNN training.
 
 ### KANN Constants
 
 **Cost Functions:**
+
 - `COST_BINARY_CROSS_ENTROPY`: Binary cross-entropy (sigmoid)
 - `COST_MULTI_CROSS_ENTROPY`: Multi-class cross-entropy (softmax)
 - `COST_BINARY_CROSS_ENTROPY_NEG`: Binary cross-entropy for tanh (-1,1)
 - `COST_MSE`: Mean square error
 
 **Node Flags:**
+
 - `KANN_FLAG_IN`, `KANN_FLAG_OUT`, `KANN_FLAG_TRUTH`, `KANN_FLAG_COST`
 
 **RNN Flags:**
+
 - `RNN_VAR_H0`: Variable initial hidden states
 - `RNN_NORM`: Layer normalization
 
 ## Choosing Between Network Implementations
 
-| Feature | TinnNetwork | GenannNetwork | FannNetwork | FannNetworkDouble | CNNNetwork | NeuralNetwork (KANN) |
+| Feature | TinnNetwork | GenannNetwork | FannNetwork | FannNetworkDouble | CNNNetwork | KannNeuralNetwork (KANN) |
 |---------|-------------|---------------|-------------|-------------------|------------|---------------------|
 | **Precision** | float32 | float64 | float32 | float64 | float64 | float32 |
 | **Architecture** | Fixed 3-layer | Multi-layer | Flexible | Flexible | Layer-based CNN | MLP/LSTM/GRU/RNN |
@@ -1240,12 +1405,14 @@ Prepare sequence data for RNN training.
 | **NumPy Default** | Converts | Native | Converts | Native | Native | Converts |
 
 **Use TinnNetwork when:**
+
 - You need a simple 3-layer network
 - Memory efficiency is important (float32 uses less memory)
 - You want the training method to return loss values
 - You prefer a simpler API with fixed architecture
 
 **Use GenannNetwork when:**
+
 - You need multiple hidden layers (deep networks)
 - Higher precision is required (float64)
 - You need to copy networks
@@ -1254,6 +1421,7 @@ Prepare sequence data for RNN training.
 - You prefer the constructor pattern: `GenannNetwork(inputs, hidden_layers, hidden_size, outputs)`
 
 **Use FannNetwork when:**
+
 - You need flexible multi-layer architectures
 - You want to control learning rate and momentum during training
 - You need sparse networks (partial connectivity)
@@ -1262,6 +1430,7 @@ Prepare sequence data for RNN training.
 - Memory efficiency is important (float32 uses less memory than float64)
 
 **Use FannNetworkDouble when:**
+
 - You need everything FannNetwork offers but with higher precision
 - Numerical stability is critical (deep networks, long training sessions)
 - You're working primarily with NumPy arrays (which default to float64)
@@ -1270,6 +1439,7 @@ Prepare sequence data for RNN training.
 - The extra memory cost (2x per weight) is acceptable
 
 **Use CNNNetwork when:**
+
 - You need convolutional layers for image processing or spatial data
 - Building custom CNN architectures (e.g., MNIST, CIFAR-10 style networks)
 - You want fine-grained control over layer configuration (kernel size, stride, padding)
@@ -1279,7 +1449,8 @@ Prepare sequence data for RNN training.
 - Higher precision is required (float64)
 - You prefer a layer-by-layer building API over fixed architecture
 
-**Use NeuralNetwork (KANN) when:**
+**Use KannNeuralNetwork (KANN) when:**
+
 - You need recurrent networks (LSTM, GRU, or simple RNN) for sequence modeling
 - Building text generation, time series prediction, or language models
 - You want built-in RMSprop optimizer with early stopping
@@ -1307,7 +1478,7 @@ Prepare sequence data for RNN training.
 
 ```python
 from concurrent.futures import ThreadPoolExecutor
-from cynn import TinnNetwork
+from cynn.tinn import TinnNetwork
 import numpy as np
 
 # Create a shared network

@@ -1,5 +1,5 @@
 import pytest
-from cynn import CNNNetwork, CNNLayer
+from cynn.cnn import CNNNetwork, CNNLayer
 
 
 class TestNetworkCreation:
