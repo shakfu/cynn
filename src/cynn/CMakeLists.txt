@@ -70,6 +70,11 @@ target_include_directories(fann_py
     ${CMAKE_BINARY_DIR}/thirdparty/fann/src/include
 )
 
+# Disable DLL mode on Windows (static linking)
+if(WIN32)
+    target_compile_definitions(fann_py PRIVATE FANN_NO_DLL)
+endif()
+
 install(TARGETS fann_py DESTINATION cynn)
 
 # cnn module (nn1)
