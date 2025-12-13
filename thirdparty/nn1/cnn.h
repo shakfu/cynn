@@ -40,6 +40,7 @@ typedef struct _Layer {
     union {
         /* Full */
         struct {
+            int _unused;        /* placeholder for MSVC compatibility */
         } full;
 
         /* Conv */

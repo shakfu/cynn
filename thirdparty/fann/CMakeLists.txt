@@ -15,6 +15,11 @@ configure_file (cmake/config.h.in ${CMAKE_CURRENT_BINARY_DIR}/src/include/config
 add_definitions(-DDISABLE_PARALLEL_FANN)
 add_definitions(-D_REENTRANT)
 
+# Disable DLL mode on Windows (we're building a static library)
+if(WIN32)
+    add_definitions(-DFANN_NO_DLL)
+endif()
+
 # Build static floatfann library
 include_directories(src/include ${CMAKE_CURRENT_BINARY_DIR}/src/include/)
 
