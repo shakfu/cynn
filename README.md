@@ -1,6 +1,6 @@
 # cynn
 
-cynn is a thin Cython wrapper around minimal, dependency-free neural network libraries written in C, providing a zero-dependency Python library for learning about neural networks and for embedding lightweight models in applications where large machine-learning frameworks are impractical or unnecessary.
+cynn is a thin Cython wrapper around a set of minimal, dependency-free neural network libraries written in C, providing a zero-dependency Python library for learning about neural networks and for embedding lightweight models in applications where large machine-learning frameworks are impractical or unnecessary.
 
 ## Overview
 
@@ -12,7 +12,7 @@ cynn provides Python bindings to five lightweight neural network libraries:
 - [nn1](https://github.com/euske/nn1) – Convolutional Neural Network library.
 - [kann](https://github.com/attractivechaos/kann) – Multi-layer perceptrons, convolutional neural networks, and recurrent neural networks (including LSTM and GRU).
 
-The project uses Cython to create efficient Python bindings to these C implementations, enabling training and inference with minimal overhead and no heavyweight dependencies.
+The project uses Cython to create efficient Python bindings to these C implementations, enabling training and inference with minimal overhead and no dependencies.
 
 ## When to Use cynn
 
@@ -86,11 +86,8 @@ The project uses Cython to create efficient Python bindings to these C implement
 git clone https://github.com/shakfu/cynn
 cd cynn
 
-# Build and install
-make build
-
-# Or manually with uv
-uv sync
+# Build and install to a local .venv (using uv)
+make
 ```
 
 ## Usage

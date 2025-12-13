@@ -16,6 +16,5 @@ target_compile_options(genann
 	-O3
 	-ffast-math
 	-flto
-	-march=native
 	-fPIC
 )

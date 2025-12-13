@@ -16,7 +16,6 @@ target_compile_options(nn1
 	-O3
 	-ffast-math
 	-flto
-	-march=native
 	-fPIC
 )
 
