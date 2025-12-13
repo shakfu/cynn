@@ -22,10 +22,8 @@ add_library(floatfann STATIC src/floatfann.c)
 
 target_compile_options(floatfann
     PUBLIC
-    -Wall
-    -Wextra
-    -O3
-    -fPIC
+    $<$<C_COMPILER_ID:MSVC>:/W3 /O2>
+    $<$<NOT:$<C_COMPILER_ID:MSVC>>:-Wall -Wextra -O3 -fPIC>
 )
 
 if (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")

@@ -10,11 +10,6 @@ add_library(tinn
 
 target_compile_options(tinn
 	PUBLIC
-	-Wall
-	-Wextra
-	-pedantic
-	-O3
-	-ffast-math
-	-flto
-	-fPIC
+	$<$<C_COMPILER_ID:MSVC>:/W4 /O2 /fp:fast>
+	$<$<NOT:$<C_COMPILER_ID:MSVC>>:-Wall -Wextra -pedantic -O3 -ffast-math -flto -fPIC>
 )

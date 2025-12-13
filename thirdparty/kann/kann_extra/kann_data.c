@@ -7,8 +7,16 @@
 #include <zlib.h>
 KSTREAM_INIT(gzFile, gzread, 16384)
 #else
+#ifdef _WIN32
+#include <io.h>
+#include <fcntl.h>
+#define open _open
+#define read _read
+#define close _close
+#else
 #include <unistd.h>
 #include <fcntl.h>
+#endif
 KSTREAM_INIT(int, read, 16384)
 #endif
 

@@ -11,6 +11,6 @@ target_include_directories(kann_lib PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 
 target_compile_options(kann_lib
     PUBLIC
-    -O3
-    -fPIC
+    $<$<C_COMPILER_ID:MSVC>:/O2>
+    $<$<NOT:$<C_COMPILER_ID:MSVC>>:-O3 -fPIC>
 )

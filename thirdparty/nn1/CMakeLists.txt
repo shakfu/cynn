@@ -10,14 +10,11 @@ add_library(nn1
 
 target_compile_options(nn1
 	PUBLIC
-	-Wall
-	-Wextra
-	-pedantic
-	-O3
-	-ffast-math
-	-flto
-	-fPIC
+	$<$<C_COMPILER_ID:MSVC>:/W4 /O2 /fp:fast>
+	$<$<NOT:$<C_COMPILER_ID:MSVC>>:-Wall -Wextra -pedantic -O3 -ffast-math -flto -fPIC>
 )
 
-# Add math library for exp, tanh, etc.
-target_link_libraries(nn1 PUBLIC m)
+# Add math library for exp, tanh, etc. (not needed on Windows)
+if(NOT WIN32)
+	target_link_libraries(nn1 PUBLIC m)
+endif()
