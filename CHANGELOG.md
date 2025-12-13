@@ -9,6 +9,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Cross-Platform CI/CD Wheel Building** - Full support for building wheels on Linux, macOS, and Windows
+  - GitHub Actions workflow (`build-wheels.yml`) using cibuildwheel for Python 3.9-3.13
+  - Builds for Linux (x86_64, aarch64), macOS (x86_64, arm64), and Windows (AMD64)
+  - Automated testing on all platforms after wheel build
+  - Enables publishing to TestPyPI and PyPI via workflow dispatch
+
 - **External Sequence Dataset** - `tests/data/sequences.csv` with 15 mathematical integer sequences
   - Patterns include: forward/reverse counting, Fibonacci mod 8, pi digits, triangular numbers, primes mod 8, Collatz sequence, popcount
   - Used by `kann_lstm_sequence.py` for LSTM sequence prediction training
@@ -33,6 +39,32 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Added `--data-path` CLI argument to specify custom sequence file
   - Falls back to inline generation if file not found
   - Integrated with `run_all_examples.py` data file handling
+
+### Fixed
+
+- **macOS Cross-Compilation** - Removed `-march=native` from CMakeLists.txt files
+  - Was causing "unknown target CPU 'apple-m1'" errors when building x86_64 wheels on ARM runners
+  - Affected: tinn, genann, nn1 libraries
+
+- **Linux Shared Object Linking** - Added `-fPIC` to KANN library CMakeLists.txt
+  - Static libraries linked into shared objects require position-independent code on Linux
+
+- **Python ABI Compatibility** - Removed `wheel.py-api = "cp312"` from pyproject.toml
+  - Was causing module import failures due to ABI tag mismatch between build and runtime Python versions
+  - Now builds version-specific wheels for each Python version
+
+- **Windows MSVC Compatibility** - Multiple fixes for Visual Studio builds:
+  - Added Windows-compatible headers in `kann_data.c` (`io.h` instead of `unistd.h`)
+  - Platform-specific compiler flags using CMake generator expressions (MSVC: `/W4 /O2`, GCC/Clang: `-Wall -Wextra -O3`)
+  - Added `FANN_NO_DLL` definition for static library builds (fixes `dllimport` linker errors)
+  - Added dummy member to empty struct in `cnn.h` (MSVC requires at least one member)
+  - Conditional math library linking (`-lm` not needed on Windows)
+
+- **Windows Test Command** - Changed single quotes to escaped double quotes in pytest `-k` argument
+  - Windows cmd doesn't recognize single quotes for argument grouping
+
+- **Windows Timer Resolution** - Changed `time.time()` to `time.perf_counter()` in threading tests
+  - `time.time()` has ~15.6ms resolution on Windows, causing fast operations to appear as 0.0 seconds
 
 ### Removed
 
