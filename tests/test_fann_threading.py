@@ -151,29 +151,29 @@ class TestThreadingPerformance:
         net = FannNetwork([100, 50, 10])
         inputs = [float(i * 0.01) for i in range(100)]
 
-        # Sequential execution
-        start = time.time()
+        # Sequential execution (use perf_counter for higher resolution on Windows)
+        start = time.perf_counter()
         for _ in range(100):
             net.predict(inputs)
-        sequential_time = time.time() - start
+        sequential_time = time.perf_counter() - start
 
         # Parallel execution
         def predict_batch():
             for _ in range(25):
                 net.predict(inputs)
 
-        start = time.time()
+        start = time.perf_counter()
         with ThreadPoolExecutor(max_workers=4) as executor:
             futures = [executor.submit(predict_batch) for _ in range(4)]
             for f in as_completed(futures):
                 f.result()
-        parallel_time = time.time() - start
+        parallel_time = time.perf_counter() - start
 
         # Parallel should be faster (with some tolerance for overhead)
         # We don't assert strict timing as it varies by system,
         # but we verify both complete successfully
-        assert sequential_time > 0
-        assert parallel_time > 0
+        assert sequential_time >= 0
+        assert parallel_time >= 0
         # Just verify the operations work in parallel
         # Actual speedup varies based on system/CPU cores
 
