@@ -8,3 +8,9 @@ add_library(kann_lib STATIC
 )
 
 target_include_directories(kann_lib PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
+
+target_compile_options(kann_lib
+    PUBLIC
+    -O3
+    -fPIC
+)
