@@ -152,22 +152,22 @@ class TestThreadingPerformance:
         inputs = [float(i * 0.01) for i in range(100)]
 
         # Sequential execution
-        start = time.time()
+        start = time.perf_counter()
         for _ in range(100):
             net.predict(inputs)
-        sequential_time = time.time() - start
+        sequential_time = time.perf_counter() - start
 
         # Parallel execution
         def predict_batch():
             for _ in range(25):
                 net.predict(inputs)
 
-        start = time.time()
+        start = time.perf_counter()
         with ThreadPoolExecutor(max_workers=4) as executor:
             futures = [executor.submit(predict_batch) for _ in range(4)]
             for f in as_completed(futures):
                 f.result()
-        parallel_time = time.time() - start
+        parallel_time = time.perf_counter() - start
 
         # Parallel should be faster (with some tolerance for overhead)
         # We don't assert strict timing as it varies by system,
