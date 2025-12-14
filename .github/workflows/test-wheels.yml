@@ -6,15 +6,21 @@ jobs:
   build_wheels:
     name: Build and Test wheels on ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
-    continue-on-error: true
     strategy:
       matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest]
+        os: [ubuntu-latest, windows-latest, macos-14]
+      fail-fast: false
 
     steps:
       - uses: actions/checkout@v4
         with:
           submodules: recursive
+
+      - name: Set up QEMU
+        if: runner.os == 'Linux'
+        uses: docker/setup-qemu-action@v3
+        with:
+          platforms: all
 
       - name: Build and Test wheels
         uses: pypa/cibuildwheel@v2.22.0
@@ -30,7 +36,7 @@ jobs:
 
           # Run tests after building (optional, comment out if tests are slow)
           CIBW_TEST_REQUIRES: "pytest>=8.4.2"
-          CIBW_TEST_COMMAND: "pytest {project}/tests -v -k 'not examples'"
+          CIBW_TEST_COMMAND: "pytest {project}/tests -v -k \"not examples\""
 
           # Platform-specific settings
           CIBW_ARCHS_LINUX: "x86_64 aarch64"
@@ -40,3 +46,9 @@ jobs:
           # Ensure C99 support on all platforms
           CIBW_ENVIRONMENT_LINUX: "CFLAGS='-O3 -std=c99'"
           CIBW_ENVIRONMENT_MACOS: "CFLAGS='-O3 -std=c99'"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: wheels-${{ matrix.os }}
+          path: ./wheelhouse/*.whl
+          if-no-files-found: error

@@ -92,9 +92,34 @@ jobs:
           path: dist/*.tar.gz
           if-no-files-found: error
 
+  collect:
+    name: Collect all artifacts
+    needs: [build_wheels, build_sdist]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: wheels-*
+          merge-multiple: true
+          path: dist/
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: sdist
+          path: dist/
+
+      - name: List collected artifacts
+        run: ls -la dist/
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: all-dist
+          path: dist/
+          if-no-files-found: error
+
   publish_testpypi:
     name: Publish to TestPyPI
-    needs: [build_wheels, build_sdist]
+    needs: [build_wheels, build_sdist, collect]
     runs-on: ubuntu-latest
     if: |
       github.event.inputs.publish_target == 'testpypi' ||
@@ -127,7 +152,7 @@ jobs:
 
   publish_pypi:
     name: Publish to PyPI
-    needs: [build_wheels, build_sdist]
+    needs: [build_wheels, build_sdist, collect]
     runs-on: ubuntu-latest
     if: |
       github.event.inputs.publish_target == 'pypi' ||
