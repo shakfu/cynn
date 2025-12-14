@@ -55,9 +55,9 @@ jobs:
           CIBW_ARCHS_MACOS: "x86_64 arm64"
           CIBW_ARCHS_WINDOWS: "AMD64"
 
-          # Ensure C99 support on all platforms
-          CIBW_ENVIRONMENT_LINUX: "CFLAGS='-O3 -std=c99'"
-          CIBW_ENVIRONMENT_MACOS: "CFLAGS='-O3 -std=c99'"
+          # Ensure C99 support on all platforms (gnu99 for POSIX functions like strdup)
+          CIBW_ENVIRONMENT_LINUX: "CFLAGS='-O3 -std=gnu99'"
+          CIBW_ENVIRONMENT_MACOS: "CFLAGS='-O3 -std=gnu99'"
 
       - uses: actions/upload-artifact@v4
         with:
