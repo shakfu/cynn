@@ -72,14 +72,22 @@ The project uses Cython to create efficient Python bindings to these C implement
 
 ## Installation
 
-### Requirements
+### Installing the Package
+
+cynn is available from pypi for python versions 3.10-3.14 for windows amd_64, macos arm64 and x86_64, and linux x86_64 and aarch64.
+
+```sh
+pip install cynn
+```
+
+### Build from source
+
+**Requirements**
 
 - Python >= 3.13
 - uv (recommended) or pip
 - CMake >= 3.15
 - C compiler
-
-### Build from source
 
 ```bash
 # Clone the repository
