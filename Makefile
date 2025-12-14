@@ -1,4 +1,4 @@
-.PHONY: all build test clean
+.PHONY: all build test clean check publish
 
 all: build
 
@@ -9,7 +9,13 @@ test:
 	@uv run pytest
 
 wheel:
-	@uv build
+	@uv build --wheel
+
+check:
+	@uv run twine check dist/*
+
+publish:
+	@uv run twine upload dist/*
 
 cmake:
 	@mkdir -p build && cd build && cmake .. && cmake --build . --config Release
