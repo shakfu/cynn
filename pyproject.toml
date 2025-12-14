@@ -1,6 +1,6 @@
 [project]
 name = "cynn"
-version = "0.1.4"
+version = "0.1.5"
 description = "Python bindings to five lightweight C neural network libraries (Tinn, GENANN, FANN, nn1, KANN)."
 readme = "README.md"
 license = "GPL-3.0-or-later"
@@ -10,7 +10,7 @@ authors = [
 maintainers = [
     { name = "Shakeeb Alireza", email = "me@example.com" }
 ]
-requires-python = ">=3.11"
+requires-python = ">=3.10"
 keywords = [
     "neural-network",
     "machine-learning",

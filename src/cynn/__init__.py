@@ -7,4 +7,4 @@
 #   from cynn.cnn import CNNNetwork, CNNLayer
 #   from cynn.kann import KannNeuralNetwork, GraphBuilder, ...
 
-__version__ = "0.1.4"
+__version__ = "0.1.5"

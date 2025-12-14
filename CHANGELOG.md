@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.5]
+
 ### Added
 
 - **Cross-Platform CI/CD Wheel Building** - Full support for building wheels on Linux, macOS, and Windows

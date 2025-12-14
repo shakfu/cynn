@@ -36,9 +36,9 @@ Low effort, high impact improvements that should be tackled first.
 
 ### CI/CD Pipeline
 
-- [ ] Set up GitHub Actions for automated testing
-- [ ] Multi-platform testing (Linux, macOS, Windows)
-- [ ] Automated wheel building for releases
+- [z] Set up GitHub Actions for automated testing
+- [z] Multi-platform testing (Linux, macOS, Windows)
+- [z] Automated wheel building for releases
 - [ ] PyPI publishing automation
 - [ ] Code coverage reporting
 
@@ -160,10 +160,10 @@ Nice to have features for future consideration.
 
 ### Pre-built Wheels
 
-- [ ] Build wheels for Linux (manylinux)
-- [ ] Build wheels for macOS (x86_64, arm64)
-- [ ] Build wheels for Windows
-- [ ] Support Python 3.10, 3.11, 3.12, 3.13+
+- [x] Build wheels for Linux (manylinux)
+- [x] Build wheels for macOS (x86_64, arm64)
+- [x] Build wheels for Windows
+- [x] Support Python 3.10, 3.11, 3.12, 3.13+
 - [ ] Automate wheel building in CI/CD
 
 ### Conda Package
